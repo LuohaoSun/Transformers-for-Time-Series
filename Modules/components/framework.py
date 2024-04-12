@@ -1,3 +1,5 @@
+# Author: Sun LuoHao
+# All rights reserved
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
@@ -12,7 +14,7 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from abc import ABC, abstractmethod
 from torchmetrics import Accuracy, F1Score, Precision, Recall
-from lightning.pytorch.loggers import NeptuneLogger
+from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, RichProgressBar
 
 
 class FrameworkBase(L.LightningModule, ABC):
@@ -39,8 +41,16 @@ class FrameworkBase(L.LightningModule, ABC):
         self.max_epochs = max_epochs
         self.max_steps = max_steps
 
+        callbacks = [
+            ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1),
+            RichModelSummary(max_depth=-1),
+            RichProgressBar(),
+
+        ]
+
         self.trainer = L.Trainer(max_epochs=self.max_epochs,
                                  max_steps=self.max_steps,
+                                 callbacks=callbacks,
                                  accelerator='auto')
 
     def forward(self, x: Tensor) -> Tensor:
@@ -61,6 +71,28 @@ class FrameworkBase(L.LightningModule, ABC):
 
     def fit(self, datamodule: L.LightningDataModule):
         return self.trainer.fit(self, datamodule)
+
+    def on_train_end(self) -> None:
+        '''
+        load the checkpoint automatically after training.
+        '''
+        checkpoint_callback: ModelCheckpoint = self.trainer.checkpoint_callback        # type: ignore
+        best_val_loss = checkpoint_callback.best_model_score
+        best_val_loss_epoch = checkpoint_callback.best_model_path.split(            # FIXME: Windows path separator
+            '/')[-1].split('=')[1]
+        self = self.__class__.load_from_checkpoint(
+            checkpoint_callback.best_model_path)
+
+        msg = f'''
+        Best validation loss: {best_val_loss}
+        At epoch {best_val_loss_epoch}
+        =======================================
+        =          Training Finished.         =
+        =  Best Model Loaded from Checkpoint. =
+        =======================================
+        '''
+        print(msg)
+        return super().on_train_end()
 
     def test(self, datamodule: L.LightningDataModule):
         return self.trainer.test(self, datamodule)

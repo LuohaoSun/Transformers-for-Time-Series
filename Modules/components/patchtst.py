@@ -75,7 +75,7 @@ class PatchTSTEncoder(nn.Module):
         x: Tensor with shape (batch_size, steps, in_features)
         returns: Tensor with shape (batch_size, steps//patch_stride, d_model)
         '''
-        x = self.token_emb(x.permute(0, 2, 1))
-        x = self.pos_emb(x.permute(0, 2, 1))
+        x = self.token_emb(x)
+        x = self.pos_emb(x)
         x = self.transformer_encoder(x)
         return x

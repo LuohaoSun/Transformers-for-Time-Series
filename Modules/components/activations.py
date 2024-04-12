@@ -3,7 +3,7 @@ from torch import Tensor
 from torch import nn
 import torch.nn.functional as F
 
-def get_activation_fn(activation: str | Callable[[Tensor], Tensor]) -> Callable[[Tensor], Tensor]:
+def get_activation_fn(activation: str | nn.Module) -> nn.Module:
     if callable(activation):
         return activation
     if activation.lower() == 'relu':

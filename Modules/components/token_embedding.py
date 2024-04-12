@@ -18,7 +18,7 @@ class Conv1dEmbedding(nn.Module):
         input: (batch_size, in_seq_len, in_features)
         output: (batch_size, out_seq_len, out_features)
         '''
-        x : Tensor = self.cnn(x.permute(0, 2, 1))
+        x = self.cnn(x.permute(0, 2, 1))
         x = x.permute(0, 2, 1)
         return x
     

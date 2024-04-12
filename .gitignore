@@ -47,6 +47,7 @@ MANIFEST
 
 # Logs and databases
 logs/
+lightning_logs/
 *.log
 *.sqlite3
 *.db
