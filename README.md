@@ -15,6 +15,8 @@ We've designed this framework with simplicity in mind. Choose your dataset and t
 
 The framework is built to be adaptable to your unique requirements. Integrate your custom datasets with ease using the provided utilities. Furthermore, adding new models for specialized time series tasks is as simple as defining a `backbone: nn.Module` and a `head: nn.Module`, without compromising any of the framework's built-in functionalities.
 
+### Based on Lightning
+
 **Get ready to explore and have fun!**
 
 ## Project Structure
@@ -30,7 +32,7 @@ Here's a quick overview of the project layout:
     ├── Modules/              # Core modules of the framework
     │   ├── components/       # Various components
     │   │   ├── activations.py # Activation functions
-    │   |   ├── framework.py       # Framework specific modules
+    │   |   ├── framework.py    # Framework specific modules
     │   │   └── ...            # More components
     │   │
     │   └── classification.py # Time series classification models
