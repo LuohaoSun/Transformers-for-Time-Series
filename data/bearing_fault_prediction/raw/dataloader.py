@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
-from data.data_augmentation import NoisyDataset, MaskingDataset, ShiftDataset, SmoothingDataset, MixupDataset, ReversedDataset
+from utils.data_augmentation import NoisyDataset, MaskingDataset, ShiftDataset, SmoothingDataset, MixupDataset, ReversedDataset
 import numpy as np
 import pandas as pd
 import os
