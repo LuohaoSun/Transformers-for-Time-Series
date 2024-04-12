@@ -3,7 +3,7 @@ a .py version of the notebook example.ipynb
 '''
 from data.bearing_fault_prediction.raw.fault_prediction_datamodule import FaultPredictionDataModule
 from Modules.classification_models import *
-
+import torch
 import subprocess
 
 
@@ -46,4 +46,4 @@ subprocess.Popen(["kill", str(pid)])
 model.test(data_module)
 
 y = model(torch.rand(32, 4096, 1))
-print(y)
+print(torch.softmax(y, dim=-1))
