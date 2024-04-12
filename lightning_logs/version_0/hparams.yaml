@@ -1,0 +1,12 @@
+in_features: 1
+d_model: 128
+patch_size: 64
+patch_stride: 64
+num_layers: 4
+dropout: 0.1
+nhead: 4
+activation: relu
+norm_first: true
+mask_ratio: 0.2
+learnable_mask: false
+lr: 0.001

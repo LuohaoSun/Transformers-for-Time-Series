@@ -1,0 +1,62 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Dependency directories
+lib/
+libs/
+library/
+libraries/
+bin/
+build/
+dist/
+egg-info/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Compiled Python files
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+
+# Logs and databases
+logs/
+*.log
+*.sqlite3
+*.db
+*.hdf5
+*.h5
+*.pkl
+*.pickle
+.neptune/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+desktop.ini

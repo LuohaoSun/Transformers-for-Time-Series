@@ -1,0 +1,28 @@
+# --------- pytorch --------- #
+torch>=2.0.0
+torchvision>=0.15.0
+lightning>=2.0.0
+torchmetrics>=0.11.4
+
+# --------- loggers --------- #
+# wandb
+neptune
+# mlflow
+# comet-ml
+# aim>=3.16.2  # no lower than 3.16.2, see https://github.com/aimhubio/aim/issues/2550
+
+
+# ----------- ml ------------ #
+scikit-learn
+xgboost
+
+# --------- others --------- #
+rootutils       # standardizing the project root setup
+pre-commit      # hooks for applying linters on commit
+rich            # beautiful text formatting in terminal
+pytest          # tests
+sh              # for running bash commands in some tests (linux/macos only)
+matplotlib      # for plotting
+numpy==1.26.4
+pandas==2.2.1
+ipywidgets      # for rich interactive visualizations in notebooks
