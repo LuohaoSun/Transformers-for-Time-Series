@@ -7,11 +7,11 @@ Welcome to the Transformers for Time-series, a comprehensive framework tailored 
 
 ## Key Features
 
-### User-Friendly Interface 傻瓜式操作
+### User-Friendly Interface 即插即用傻瓜式操作
 
 We've designed this framework with simplicity in mind. Choose your dataset and the model that best fits your needs, and let the framework handle the complexities of training, validation, testing, and more. It offers a seamless experience, covering logging, metrics computation, and visualizations for diverse time series tasks.
 
-### Flexibility at Its Best 灵活自定义
+### Flexibility at Its Best 灵活可扩展
 
 The framework is built to be adaptable to your unique requirements. Integrate your custom datasets with ease using the provided utilities. Furthermore, adding new models for specialized time series tasks is as simple as defining a `backbone: nn.Module` and a `head: nn.Module`, without compromising any of the framework's built-in functionalities.
 
