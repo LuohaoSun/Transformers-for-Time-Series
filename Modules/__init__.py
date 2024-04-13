@@ -5,3 +5,5 @@ shapes of the models:
     - forecasting: (batch_size, in_seq_len, in_features) -> (batch_size, out_seq_len, out_features)
     - auto-enconding: (batch_size, in_seq_len, in_features) -> (batch_size, in_seq_len, in_features)
 '''
+
+from framework.classification_framework import *
