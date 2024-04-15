@@ -1,16 +1,12 @@
-import lightning as L
-import torch.nn.functional as F
+
 import torch.nn as nn
 import torch
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
 from torch import Tensor
-
-from Modules.components.framework import ClassificationFramework
+from Modules.framework import ClassificationFramework
 from Modules.components.activations import get_activation_fn
-from Modules.components.patchtst import PatchTSTEncoder
-from Modules.components.heads import *
+from Modules.backbones.patchtst import PatchTSTEncoder
+from Modules.heads.classification_heads import *
 
 
 class CustomClassificationModel(ClassificationFramework):
@@ -151,6 +147,6 @@ class PatchTSTClassificationModel(ClassificationFramework):
     def configure_head(self) -> nn.Module:
         head = MeanLinearHead(
             in_features=self.hparams['d_model'],
-            out_features=self.hparams['num_classes']
+            num_classes=self.hparams['num_classes']
         )
         return head
