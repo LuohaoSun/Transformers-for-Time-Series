@@ -2,11 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import lightning as L
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
 from Modules.components import positional_embedding as PE
 from Modules.components import token_embedding as TE
-from Modules.heads import heads
 from torch import Tensor
 from typing import Any, Dict, Iterable, Mapping, Union, Callable
 from Modules.components.activations import get_activation_fn

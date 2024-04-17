@@ -34,7 +34,7 @@ class MeanLinearHead(L.LightningModule):
         this head fetches all time steps of the input tensor and 
         calculate the mean on the time dimension, then feed the mean tensor to a linear layer.
         '''
-        super().__init__(in_features, num_classes)
+        super().__init__()
         self.in_features = in_features
         self.num_classes = num_classes
         self.linear = nn.Linear(in_features, num_classes)

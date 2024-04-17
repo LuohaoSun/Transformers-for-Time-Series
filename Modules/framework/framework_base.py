@@ -3,12 +3,15 @@
 import lightning as L
 import torch.nn as nn
 import torch
+import subprocess
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch import Tensor
 from abc import ABC, abstractmethod
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, RichProgressBar
+from rich import print
+
 
 class FrameworkBase(L.LightningModule, ABC):
     '''
@@ -17,7 +20,7 @@ class FrameworkBase(L.LightningModule, ABC):
     properties:
         backbone: nn.Module
         head: nn.Module
-    
+
     methods:
         forward: Tensor -> Tensor
         fit: L.LightningDataModule -> None. Model trains itself.
@@ -50,10 +53,10 @@ class FrameworkBase(L.LightningModule, ABC):
             RichProgressBar(),
         ]
 
-        self.trainer = L.Trainer(max_epochs=self.max_epochs,
-                                 max_steps=self.max_steps,
-                                 callbacks=callbacks,
-                                 accelerator='auto')
+        self.framework_trainer = L.Trainer(max_epochs=self.max_epochs,
+                                           max_steps=self.max_steps,
+                                           callbacks=callbacks,
+                                           accelerator='auto')
 
     def forward(self, x: Tensor) -> Tensor:
         '''
@@ -71,17 +74,28 @@ class FrameworkBase(L.LightningModule, ABC):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return {'optimizer': optimizer}
 
-    def fit(self, datamodule: L.LightningDataModule):
-        return self.trainer.fit(self, datamodule)
-    
+    def fit(self, datamodule: L.LightningDataModule, enable_tensorboard=True):
+        if enable_tensorboard:
+            pid = subprocess.Popen(
+                ["tensorboard", "--logdir=lightning_logs"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).pid
+            msg = f'''
+            =======================================
+            =        Tensorboard Activated.       =
+            =     Open http://localhost:6006      =
+            =======================================
+            tensorboard PID: {pid}
+            '''
+            print(msg)
+        return self.framework_trainer.fit(self, datamodule)
+
     def test(self, datamodule: L.LightningDataModule):
-        return self.trainer.test(self, datamodule)
-    
+        return self.framework_trainer.test(self, datamodule)
+
     def run_training(self, datamodule: L.LightningDataModule):
-        return self.fit(self, datamodule)
-    
+        return self.fit(datamodule)
+
     def run_testing(self, datamodule: L.LightningDataModule):
-        return self.test(self, datamodule)
+        return self.test(datamodule)
 
     def on_train_end(self) -> None:
         '''

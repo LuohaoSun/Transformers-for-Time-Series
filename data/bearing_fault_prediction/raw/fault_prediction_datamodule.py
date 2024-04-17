@@ -8,6 +8,8 @@ import numpy as np
 import os
 import torch
 import tqdm
+from rich import print
+from rich.progress import Progress
 
 
 class FaultPredictionDataModule(LightningDataModule):
@@ -41,8 +43,7 @@ class FaultPredictionDataModule(LightningDataModule):
 
         if not os.path.exists(self.train_data_dir):
             raise FileNotFoundError(
-                f"Training data directory {
-                    self.train_data_dir} does not exist."
+                f"Training data directory { self.train_data_dir} does not exist."
             )
 
     def setup(self, stage: Optional[str] = None) -> None:
@@ -59,26 +60,30 @@ class FaultPredictionDataModule(LightningDataModule):
         if self.trainer is not None:
             if self.batch_size % self.trainer.world_size != 0:
                 raise RuntimeError(
-                    f"Batch size ({self.batch_size}) is not divisible by the number of devices ({
-                        self.trainer.world_size})."
+                    f"Batch size ({self.batch_size}) is not divisible by the number of devices ({self.trainer.world_size})."
                 )
             self.batch_size_per_device = self.batch_size // self.trainer.world_size
         else:
             self.batch_size_per_device = self.batch_size
 
-        if not hasattr(self, 'data_train') :
+        if not hasattr(self, 'data_train'):
             self.data_train, self.data_val, self.data_test = self.prepare_datasets()
 
     def prepare_datasets(self):
         print('Preparing datasets...')
         # read 4 types of samples:
         sample_i_datasets = []
-        for i in range(4):
-            sample_i_dir = self.train_data_dir+str(i)+'/'
-            sample_i = [np.loadtxt(sample_i_dir+'/'+file)
-                        for file in tqdm.tqdm(os.listdir(sample_i_dir), desc=f'Reading samples{i}')]
-            sample_i_dataset = List2Dataset(sample_i, i, self.transforms)
-            sample_i_datasets.append(sample_i_dataset)
+        with Progress() as progress:
+            task = progress.add_task("[green]Reading samples...", total=4)
+            for i in range(4):
+                sample_i_dir = self.train_data_dir + str(i) + '/'
+                sample_i_files = os.listdir(sample_i_dir)
+                progress.update(task, advance=1,
+                                description=f"Reading samples {i}")
+                sample_i = [np.loadtxt(sample_i_dir + '/' + file)
+                            for file in sample_i_files]
+                sample_i_dataset = List2Dataset(sample_i, i, self.transforms)
+                sample_i_datasets.append(sample_i_dataset)
         train_dataset = ConcatDataset(sample_i_datasets)
         # random split train, val and test dataset:
         train_size, val_size, test_size = self.train_val_test_split

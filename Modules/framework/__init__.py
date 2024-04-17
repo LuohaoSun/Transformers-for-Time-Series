@@ -1,2 +1,2 @@
-from framework_base import *
-from classification_framework import *
+from .framework_base import *
+from .classification_framework import *

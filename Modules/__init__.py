@@ -6,4 +6,4 @@ shapes of the models:
     - auto-enconding: (batch_size, in_seq_len, in_features) -> (batch_size, in_seq_len, in_features)
 '''
 
-from framework.classification_framework import *
+from .framework.classification_framework import *

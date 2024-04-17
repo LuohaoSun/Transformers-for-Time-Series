@@ -1,12 +1,12 @@
 from typing import Callable
 from torch import Tensor
-from Modules.framework.masked_autoencoding_framework import MaskedAutoEncodingFramework
+from Modules.framework.autoencoding_framework import AutoEncodingFramework
 from Modules.backbones import patchtst
 from Modules.heads import autoencoding_heads
 from Modules.components.activations import get_activation_fn
 
 
-class PatchTSTAutoEncodingModel(MaskedAutoEncodingFramework):
+class PatchTSTAutoEncodingModel(AutoEncodingFramework):
     '''
     PatchTST自编码模型，用于时间序列随机遮蔽重构任务。
     '''

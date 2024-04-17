@@ -95,7 +95,7 @@ class SimpleConv1dClassificationModel(ClassificationFramework):
     def configure_head(self) -> nn.Module:
         head = MeanLinearHead(
             in_features=self.hparams['hidden_features'],
-            out_features=self.hparams['num_classes']
+            num_classes=self.hparams['num_classes'],
         )
         return head
 
