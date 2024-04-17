@@ -1,9 +1,55 @@
 from typing import Callable
+from requests import head
 from torch import Tensor
+from torch.nn.modules import Module
 from Modules.framework.autoencoding_framework import AutoEncodingFramework
-from Modules.backbones import patchtst
+from Modules.backbones import patchtst, mlp
 from Modules.heads import autoencoding_heads
 from Modules.components.activations import get_activation_fn
+
+
+class AutoEncoder(AutoEncodingFramework):
+    def __init__(self,
+                 # model params
+                 encoder_in_seq_len: int,
+                 encoder_hidden_len: tuple[int, ...],
+                 encoder_out_seq_len: int,
+                 activation: str | Callable[[Tensor], Tensor],
+
+                 # training params
+                 lr: float,
+                 max_epochs: int,
+                 max_steps: int = -1,
+                 mask_ratio: float = 0,
+                 mask_length: int = 1,
+                 loss_type: str = 'full',  # 'full', 'masked', 'hybrid'
+                 ) -> None:
+        '''
+        decoder is just the encoder in reverse order.
+        '''
+        self.save_hyperparameters()
+        backbone = mlp.MLPBackbone(
+            in_seq_len=encoder_in_seq_len,
+            hidden_len=encoder_hidden_len,
+            out_seq_len=encoder_out_seq_len,
+            activation=activation
+        )
+        head = mlp.MLPBackbone(
+            in_seq_len=encoder_out_seq_len,
+            hidden_len=encoder_hidden_len[::-1],
+            out_seq_len=encoder_in_seq_len,
+            activation=activation
+        )
+        super().__init__(
+            backbone=backbone,
+            head=head,
+            lr=lr,
+            max_epochs=max_epochs,
+            max_steps=max_steps,
+            mask_ratio=mask_ratio,
+            mask_length=mask_length,
+            loss_type=loss_type
+        )
 
 
 class PatchTSTAutoEncodingModel(AutoEncodingFramework):

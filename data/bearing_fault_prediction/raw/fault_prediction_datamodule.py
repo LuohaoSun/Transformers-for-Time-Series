@@ -38,6 +38,10 @@ class FaultPredictionDataModule(LightningDataModule):
     @property
     def num_classes(self) -> int:
         return 4
+    
+    @property
+    def shape(self) -> Tuple[int, int, int]:
+        return (self.batch_size, 4096, 1)
 
     def prepare_data(self) -> None:
 

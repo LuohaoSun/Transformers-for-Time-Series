@@ -21,13 +21,15 @@ class RandomMask(L.LightningModule):
     def __init__(self, mask_ratio, mask_length) -> None:
         '''
         mask the input tensor and store the mask in property.
-        mask_ratio (float): The ratio of masked tokens in the input sequence.
+        mask_ratio (float) [0, 1): The ratio of masked tokens in the input sequence.
+            A mask_ration = 0 will implement Identity input-output.
         mask_length (int, optional): The length of the masked tokens. Defaults to 1. 
             A mask_length > 1 will implement patch masking, where the length of mask and non-masked values are both n*mask_length.
         TODO: learnable mask token
         FIXME: not test for mask_ratio == 0
         '''
         super().__init__()
+        assert 0 <= mask_ratio < 1
         self.mask_ratio = mask_ratio
         self.mask_length = mask_length
         self.mask: Tensor
@@ -47,8 +49,7 @@ class RandomMask(L.LightningModule):
         output: mask of shape (b, l, d) where 1 denotes mask and 0 denotes non-mask
         '''
         assert tensor.shape[1] % self.mask_length == 0, \
-            f"mask_length should be a divisor of sequence length, but got {
-                self.mask_length} and {tensor.shape[1]}"
+            f"mask_length should be a divisor of sequence length, but got {self.mask_length} and {tensor.shape[1]}"
         mask = torch.rand(tensor.shape[0],
                           tensor.shape[1]//self.mask_length) < self.mask_ratio
         mask = mask.repeat_interleave(self.mask_length, dim=1)
@@ -61,7 +62,7 @@ class RandomMask(L.LightningModule):
         return masked_tensor, mask
 
 
-class MaskedLoss(nn.Module):
+class MaskedLoss(L.LightningModule):
     def __init__(self,
                  loss_type: str = 'hybrid',  # full, masked, hybrid
                  hybrid_ratio: Iterable[float] = [0.1, 0.9]
@@ -71,6 +72,7 @@ class MaskedLoss(nn.Module):
         masked loss: compute loss within only masked inputs and outputs
         hybrid: combine both loss with a fixed ratio.
         '''
+        super().__init__()
         self.loss_type = loss_type
         self.hybrid_ratio = hybrid_ratio
 
@@ -100,15 +102,22 @@ class MaskedLoss(nn.Module):
         return full_weight*full_loss + masked_weight*masked_loss
 
 
-class PlotSeriesCallbcak(Callback):
+class PlotSeriesCallbcak():
     '''
     a callback for auto encoding framework, used to plot original and reconstructed series.
+    rely on matplotlib and tensorboard.
     '''
 
-    def __init__(self):
-        pass
+    def __init__(self,
+                 every_n_epochs: int = 20,
+                 figsize: tuple[int, int] = (10, 5),
+                 dpi: int = 300
+                 ) -> None:
+        self.every_n_epochs = every_n_epochs
+        self.figsize = figsize
+        self.dpi = dpi
 
-    def on_validation_batch_end(
+    def __call__(
         self,
         trainer: L.Trainer,
         pl_module: L.LightningModule,
@@ -118,14 +127,14 @@ class PlotSeriesCallbcak(Callback):
         dataloader_idx: int = 0,
     ) -> None:
 
-        if trainer.current_epoch % 20 == 0 and batch_idx == 0:     # FIXME: hard coded epoch interval
+        if trainer.current_epoch % self.every_n_epochs == 0 and batch_idx == 0:
             experiment: SummaryWriter = trainer.logger.experiment       # type: ignore
 
             for key, value in outputs.items():
+                if key == 'loss':
+                    continue
                 img = self.plot_series({key: value})
                 experiment.add_figure(tag=key, figure=img)
-
-        return super().on_validation_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
 
     def plot_series(self, series: Tensor | list[Tensor] | dict[str, Tensor]) -> Figure:
         '''
@@ -134,7 +143,8 @@ class PlotSeriesCallbcak(Callback):
         only first nodes are plotted when the series has a third dimension.
         returns the figure path
         '''
-        plt.figure(figsize=(7, 3), dpi=300)    # FIXME: hard coded figure size
+        plt.figure(figsize=self.figsize,
+                   dpi=self.dpi)    # FIXME: hard coded figure size
         if isinstance(series, dict):
             for series_name, series_values in series.items():
                 self.sub_plot(series_values, series_name)
@@ -209,13 +219,32 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         """
         super().__init__(backbone, head, lr, max_epochs, max_steps)
         self.random_mask = RandomMask(mask_ratio, mask_length)
-        self.loss = MaskedLoss(loss_type=loss_type)
+        # TODO: customize loss params
+        self.loss_func = MaskedLoss(loss_type=loss_type)
+        assert mask_ratio > 0 or loss_type == 'full', "mask_ratio should be greater than 0 when loss_type is not 'full'"
+        self.mask_ratio = mask_ratio
+        # TODO: customize plotter params
+        self.series_plotter = PlotSeriesCallbcak()
+
+    def loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
+        '''
+        input: (batch_size, seq_len, n_features)
+        output: scalar
+        '''
+        mask = self.random_mask.mask
+        return self.loss_func(x, x_hat, mask)
 
     def training_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:
-        return {'loss': self.validation_step(batch, batch_idx)['loss']}
+        step_output = self.test_step(batch, batch_idx)
+        loss = step_output['loss']
+        self.log('train_loss', loss)
+        return step_output
 
     def validation_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:
-        return self.test_step(batch, batch_idx)
+        step_output = self.test_step(batch, batch_idx)
+        loss = step_output['loss']
+        self.log('val_loss', loss)
+        return step_output
 
     def test_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:
         x, y = batch
@@ -223,17 +252,41 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         mask = self.random_mask.mask
         x_hat = self.forward(masked_input)
 
-        loss = self.loss(x, x_hat, )
-        self.log('val_loss', loss, prog_bar=True, logger=True)
+        loss = self.loss(x, x_hat)
 
-        return {'loss': loss,
-                'original': x,
-                'masked_input': masked_input,
-                'mask': mask,
-                'output': x_hat,
-                'masked_values': x.where(mask, 0),
-                'reconstructed_values': x_hat.where(mask, 0)
-                }
+        if self.mask_ratio > 0:
+            return {'loss': loss,
+                    'original': x,
+                    'masked_input': masked_input,
+                    'mask': mask,
+                    'output': x_hat,
+                    'masked_values': x.where(mask, 0),
+                    'reconstructed_values': x_hat.where(mask, 0)
+                    }
+        else:
+            return {'loss': loss,
+                    'original': x,
+                    'output': x_hat,
+                    }
 
     def predict_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:
         raise NotImplementedError()
+
+    def encode(self, x: Tensor) -> Tensor:
+        '''
+        input: (batch_size, seq_len, n_features)
+        output: (batch_size, seq_len, hidden_features)
+        '''
+        return self.backbone(x)
+
+    def decode(self, x: Tensor) -> Tensor:
+        '''
+        input: (batch_size, seq_len, hidden_features)
+        output: (batch_size, seq_len, n_features)
+        '''
+        return self.head(x)
+
+    def on_validation_batch_end(self, outputs: Mapping[str, Tensor], batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        self.series_plotter(self.trainer, self, outputs,
+                            batch, batch_idx, dataloader_idx)
+        return super().on_validation_batch_end(outputs, batch, batch_idx, dataloader_idx)

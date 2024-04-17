@@ -28,7 +28,6 @@ class FrameworkBase(L.LightningModule, ABC):
         run_training: L.LightningDataModule -> None. Same as fit.
         run_testing: L.LightningDataModule -> None. Same as test.
     '''
-    @abstractmethod
     def __init__(self,
                  # model params
                  backbone: nn.Module,
@@ -57,6 +56,7 @@ class FrameworkBase(L.LightningModule, ABC):
                                            max_steps=self.max_steps,
                                            callbacks=callbacks,
                                            accelerator='auto')
+        
 
     def forward(self, x: Tensor) -> Tensor:
         '''
@@ -86,7 +86,11 @@ class FrameworkBase(L.LightningModule, ABC):
             tensorboard PID: {pid}
             '''
             print(msg)
-        return self.framework_trainer.fit(self, datamodule)
+            self.framework_trainer.fit(self, datamodule)
+            msg = f'''
+            input('Press any key to exit tensorboard...')'''
+            subprocess.run(["kill", str(pid)])
+        return 
 
     def test(self, datamodule: L.LightningDataModule):
         return self.framework_trainer.test(self, datamodule)
