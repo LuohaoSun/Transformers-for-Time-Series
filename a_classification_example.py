@@ -1,27 +1,31 @@
 '''
 a .py version of the notebook example.ipynb
 '''
-from data.bearing_fault_prediction.raw.fault_prediction_datamodule import FaultPredictionDataModule
-from Modules.models.classification_models import *
-import torch
+def main():
+    import torch
 
-if __name__ == '__main__':
-
+    # Step 1. Choose a dataset (L.LightningDataModule)
+    from data.bearing_fault_prediction.raw.fault_prediction_datamodule import FaultPredictionDataModule
     data_module = FaultPredictionDataModule()
+
+    # Step 2. Choose a model (ClassificationFramework from models.classification_models)
+    from Modules.models.classification_models import SimpleConv1dClassificationModel
     model = SimpleConv1dClassificationModel(
         in_features=1,
         num_classes=4,
-        hidden_features=64,
+        hidden_features=512,
         kernel_size=16,
         stride=8,
-        padding=4,
-        pool_size=64,
-        activation='relu',
+        padding=0,
+        pool_size=8,
+        activation='softplus',
 
         lr=1e-3,
-        max_epochs=50,
+        max_epochs=10,
     )
 
+    # for a higher resolution model, use the following model
+    # from Modules.models.classification_models import PatchTSTClassificationModel
     # model = PatchTSTClassificationModel(
     #     in_features=1,
     #     d_model=64,
@@ -39,9 +43,14 @@ if __name__ == '__main__':
 
     # )
 
+    # Step 3. model trains itself with the datamodule
     model.fit(data_module)
-
     model.test(data_module)
 
+    # Step 4. model predicts
     y = model(torch.rand(32, 4096, 1))
     print(torch.softmax(y, dim=-1))
+
+
+if __name__ == '__main__':
+    main()

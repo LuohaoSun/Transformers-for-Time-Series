@@ -134,7 +134,8 @@ class PlotSeriesCallbcak():
                 if key == 'loss':
                     continue
                 img = self.plot_series({key: value})
-                experiment.add_figure(tag=key, figure=img)
+                experiment.add_figure(
+                    tag=f'{key}-{trainer.current_epoch}', figure=img)
 
     def plot_series(self, series: Tensor | list[Tensor] | dict[str, Tensor]) -> Figure:
         '''
@@ -237,13 +238,13 @@ class AutoEncodingFramework(FrameworkBase, ABC):
     def training_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:
         step_output = self.test_step(batch, batch_idx)
         loss = step_output['loss']
-        self.log('train_loss', loss)
+        self.log('train_loss', loss, prog_bar=True)
         return step_output
 
     def validation_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:
         step_output = self.test_step(batch, batch_idx)
         loss = step_output['loss']
-        self.log('val_loss', loss)
+        self.log('val_loss', loss, prog_bar=True)
         return step_output
 
     def test_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Tensor]:

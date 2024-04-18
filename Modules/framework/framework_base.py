@@ -11,6 +11,63 @@ from torch import Tensor
 from abc import ABC, abstractmethod
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary, RichProgressBar
 from rich import print
+from lightning_utilities.core.rank_zero import rank_zero_only
+
+
+class TensorboardCallback(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+        self.proc: Optional[subprocess.Popen] = None
+        pass
+
+    def on_train_start(self, trainer, pl_module) -> None:
+        with subprocess.Popen(["tensorboard", "--logdir=lightning_logs"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            print(f'''
+=======================================
+=        Tensorboard Activated.       =
+=======================================
+Open http://localhost:6006/ to view the training process.
+tensorboard PID: {proc.pid}
+            ''')
+            self.proc = proc
+        return super().on_train_start(trainer, pl_module)
+
+    def on_train_end(self, trainer, pl_module) -> None:
+        if self.proc:
+            self.proc.terminate()
+        else:
+            pass
+        return
+
+
+class LoadCheckpointCallback(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+        return
+
+    def on_train_end(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
+
+        checkpoint_callback: ModelCheckpoint = trainer.checkpoint_callback        # type: ignore
+        best_val_loss = checkpoint_callback.best_model_score
+        best_val_loss_epoch = checkpoint_callback.best_model_path.split(            # FIXME: Windows path separator
+            '/')[-1].split('=')[1].split('-')[0]
+
+        # FIXME: log_hyperparams does not work
+        trainer.logger.log_hyperparams(                         # type: ignore  
+            pl_module.hparams, {'hp_metric': best_val_loss})    # type: ignore
+
+        pl_module = pl_module.__class__.load_from_checkpoint(
+            checkpoint_callback.best_model_path)
+        msg = f'''
+Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
+Checkpoint saved at {checkpoint_callback.best_model_path}
+Best Model Loaded from Checkpoint.        
+=======================================
+=          Training Finished.         =
+=======================================
+'''
+        print(msg)
+        return super().on_train_end(trainer, pl_module)
 
 
 class FrameworkBase(L.LightningModule, ABC):
@@ -28,6 +85,7 @@ class FrameworkBase(L.LightningModule, ABC):
         run_training: L.LightningDataModule -> None. Same as fit.
         run_testing: L.LightningDataModule -> None. Same as test.
     '''
+
     def __init__(self,
                  # model params
                  backbone: nn.Module,
@@ -46,17 +104,20 @@ class FrameworkBase(L.LightningModule, ABC):
         self.max_epochs = max_epochs
         self.max_steps = max_steps
 
-        callbacks = [
+        self.callbacks = [
             ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1),
             RichModelSummary(max_depth=-1),
             RichProgressBar(),
+            TensorboardCallback()
         ]
 
-        self.framework_trainer = L.Trainer(max_epochs=self.max_epochs,
-                                           max_steps=self.max_steps,
-                                           callbacks=callbacks,
-                                           accelerator='auto')
-        
+    @property
+    def framework_trainer(self) -> L.Trainer:
+        framework_trainer = L.Trainer(max_epochs=self.max_epochs,
+                                      max_steps=self.max_steps,
+                                      callbacks=self.callbacks,
+                                      accelerator='auto')
+        return framework_trainer
 
     def forward(self, x: Tensor) -> Tensor:
         '''
@@ -74,23 +135,9 @@ class FrameworkBase(L.LightningModule, ABC):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return {'optimizer': optimizer}
 
-    def fit(self, datamodule: L.LightningDataModule, enable_tensorboard=True):
-        if enable_tensorboard:
-            pid = subprocess.Popen(
-                ["tensorboard", "--logdir=lightning_logs"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).pid
-            msg = f'''
-            =======================================
-            =        Tensorboard Activated.       =
-            =     Open http://localhost:6006      =
-            =======================================
-            tensorboard PID: {pid}
-            '''
-            print(msg)
-            self.framework_trainer.fit(self, datamodule)
-            msg = f'''
-            input('Press any key to exit tensorboard...')'''
-            subprocess.run(["kill", str(pid)])
-        return 
+    def fit(self, datamodule: L.LightningDataModule):
+        self.framework_trainer.fit(self, datamodule)
+        return
 
     def test(self, datamodule: L.LightningDataModule):
         return self.framework_trainer.test(self, datamodule)
@@ -101,28 +148,17 @@ class FrameworkBase(L.LightningModule, ABC):
     def run_testing(self, datamodule: L.LightningDataModule):
         return self.test(datamodule)
 
-    def on_train_end(self) -> None:
-        '''
-        load the checkpoint automatically after training.
-        '''
-        checkpoint_callback: ModelCheckpoint = self.trainer.checkpoint_callback        # type: ignore
-        best_val_loss = checkpoint_callback.best_model_score
-        best_val_loss_epoch = checkpoint_callback.best_model_path.split(            # FIXME: Windows path separator
-            '/')[-1].split('=')[1]
-        self = self.__class__.load_from_checkpoint(
-            checkpoint_callback.best_model_path)
-
+    def on_train_start(self) -> None:
+        self.logger.log_hyperparams(self.hparams)     # type: ignore
         msg = f'''
-        Best validation loss: {best_val_loss}
-        At epoch {best_val_loss_epoch}
-        Checkpoint saved at {checkpoint_callback.best_model_path}
-        =======================================
-        =          Training Finished.         =
-        =  Best Model Loaded from Checkpoint. =
-        =======================================
-        '''
+Hyperparameters:
+{self.hparams}
+=======================================
+=          Training Started.          =
+=======================================
+'''
         print(msg)
-        return super().on_train_end()
+        return super().on_train_start()
 
     @abstractmethod
     def loss(self, output: Tensor, target: Tensor) -> Tensor:
