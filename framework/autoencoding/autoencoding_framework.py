@@ -1,6 +1,7 @@
 # Author: Sun LuoHao
 # All rights reserved
 
+from gc import callbacks
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
@@ -14,7 +15,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from abc import ABC, abstractmethod
-from .framework_base import FrameworkBase
+from ..framework_base.framework_base import FrameworkBase
+from .autoencoding_callbacks import get_autoencoding_callbacks
 
 
 class RandomMask(L.LightningModule):
@@ -106,93 +108,6 @@ class MaskedLoss(L.LightningModule):
         return full_weight * full_loss + masked_weight * masked_loss
 
 
-class PlotSeriesCallbcak:
-    """
-    a callback for auto encoding framework, used to plot original and reconstructed series.
-    rely on matplotlib and tensorboard.
-    """
-
-    def __init__(
-        self,
-        every_n_epochs: int = 20,
-        figsize: tuple[int, int] = (10, 5),
-        dpi: int = 300,
-    ) -> None:
-        self.every_n_epochs = every_n_epochs
-        self.figsize = figsize
-        self.dpi = dpi
-
-    def __call__(
-        self,
-        trainer: L.Trainer,
-        pl_module: L.LightningModule,
-        outputs: Mapping[str, Tensor],
-        batch: Iterable[Tensor],
-        batch_idx: int,
-        dataloader_idx: int = 0,
-    ) -> None:
-
-        if trainer.current_epoch % self.every_n_epochs == 0 and batch_idx == 0:
-            experiment: SummaryWriter = trainer.logger.experiment  # type: ignore
-
-            for key, value in outputs.items():
-                if key == "loss":
-                    continue
-                img = self.plot_series({key: value})
-                experiment.add_figure(tag=f"{key}-{trainer.current_epoch}", figure=img)
-
-    def plot_series(self, series: Tensor | list[Tensor] | dict[str, Tensor]) -> Figure:
-        """
-        all series should have the same shape if multiple series are passed.
-        series: (batch_size, series_length) or (batch_size, series_length, n_features)
-        only first nodes are plotted when the series has a third dimension.
-        returns the figure path
-        """
-        plt.figure(figsize=self.figsize, dpi=self.dpi)  # FIXME: hard coded figure size
-        if isinstance(series, dict):
-            for series_name, series_values in series.items():
-                self.sub_plot(series_values, series_name)
-        elif isinstance(series, list):
-            for series_values in series:
-                self.sub_plot(series_values)
-        else:
-            self.sub_plot(series)
-        # plt.legend()
-        plt.xlabel("Time steps")
-        plt.ylabel("Value")
-        img = plt.gcf()
-        plt.close()
-        return img
-
-    def sub_plot(self, series: Tensor, series_name: str | None = None):
-        """
-        series: (batch_size, series_length) or (batch_size, series_length, num_nodes)
-        only first plot_nodes nodes are plotted when the series has a third dimension.
-        """
-        series_name = series_name if series_name is not None else "Series"
-        # plot a single series
-        if (
-            len(series.shape) == 3
-        ):  # Series has shape (batch_size, series_length, num_nodes)
-            x = np.arange(series.shape[1])
-            y = series[0, :, 0].cpu().detach().numpy()
-        elif len(series.shape) == 2:  # Series has shape (batch_size, series_length)
-            x = np.arange(series.shape[1])
-            y = series[0, :].cpu().detach().numpy()
-        else:
-            UserWarning(
-                f"""
-                Unsupported series shape.
-                Expected (batch_size, series_length)
-                or (batch_size, series_length, num_nodes),
-                but got shape {series.shape} instead.
-                Skipping this series.
-                """
-            )
-            return
-        plt.plot(x, y, label=series_name)
-
-
 class AutoEncodingFramework(FrameworkBase, ABC):
     """
     用于时间序列随机遮蔽重构任务的基础模型类，
@@ -205,6 +120,10 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         # model params
         backbone: nn.Module,
         head: nn.Module,
+        # logging params
+        every_n_epochs,
+        figsize,
+        dpi,
         # training params
         lr: float,
         max_epochs: int,
@@ -219,12 +138,18 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         Args:
             backbone (nn.Module): The backbone module.
             head (nn.Module): The head module.
+            
+            every_n_epochs (int): log the visualization figures every n epochs.
+            figsize (Tuple[int, int]): The size of the figure.
+            dpi (int): The dpi of the figure.
+            
             mask_ratio (float): The ratio of masked tokens in the input sequence. Defaults to 0.
             mask_length (int, optional): The length of the masked tokens. Defaults to 1.
                 A mask_length > 1 will implement patch masking, where the length of mask and non-masked values are both n*mask_length.
             loss_type (str, optional): The type of loss to be used. Can be 'full', 'masked', or 'hybrid'.
         """
-        super().__init__(backbone, head, lr, max_epochs, max_steps)
+        callbacks = get_autoencoding_callbacks(every_n_epochs, figsize, dpi)
+        super().__init__(backbone, head, callbacks, lr, max_epochs, max_steps)
         self.random_mask = RandomMask(mask_ratio, mask_length)
         # TODO: customize loss params
         self.loss_func = MaskedLoss(loss_type=loss_type)
@@ -233,7 +158,6 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         ), "mask_ratio should be greater than 0 when loss_type is not 'full'"
         self.mask_ratio = mask_ratio
         # TODO: customize plotter params
-        self.series_plotter = PlotSeriesCallbcak()
 
     def loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
         """

@@ -1,90 +1,17 @@
 # Author: Sun LuoHao
 # All rights reserved
+from operator import call
 import lightning as L
 import torch.nn as nn
 import torch
-import subprocess
+
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch import Tensor
 from abc import ABC, abstractmethod
-from lightning.pytorch.callbacks import (
-    ModelCheckpoint,
-    RichModelSummary,
-    RichProgressBar,
-)
 from rich import print
-from lightning_utilities.core.rank_zero import rank_zero_only
-
-
-class TensorboardCallback(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
-        self.proc: Optional[subprocess.Popen] = None
-        pass
-
-    def on_train_start(self, trainer, pl_module) -> None:
-        with subprocess.Popen(
-            ["tensorboard", "--logdir=lightning_logs"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as proc:
-            print(
-                f"""
-=======================================
-=        Tensorboard Activated.       =
-=======================================
-Open http://localhost:6006/ to view the training process.
-tensorboard PID: {proc.pid}
-            """
-            )
-            self.proc = proc
-        return super().on_train_start(trainer, pl_module)
-
-    def on_train_end(self, trainer, pl_module) -> None:
-        if self.proc:
-            self.proc.terminate()
-        else:
-            pass
-        return
-
-
-class LoadCheckpointCallback(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
-        return
-
-    def on_train_end(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
-
-        checkpoint_callback: ModelCheckpoint = trainer.checkpoint_callback  # type: ignore
-        best_val_loss = checkpoint_callback.best_model_score
-        best_val_loss_epoch = (
-            checkpoint_callback.best_model_path.split(  # FIXME: Windows path separator
-                "/"
-            )[-1]
-            .split("=")[1]
-            .split("-")[0]
-        )
-
-        # FIXME: log_hyperparams does not work
-        trainer.logger.log_hyperparams(                     # type: ignore
-            pl_module.hparams, {"hp_metric": best_val_loss} # type: ignore
-        )  # type: ignore
-
-        pl_module = pl_module.__class__.load_from_checkpoint(
-            checkpoint_callback.best_model_path
-        )
-        msg = f"""
-Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
-Checkpoint saved at {checkpoint_callback.best_model_path}
-Best Model Loaded from Checkpoint.        
-=======================================
-=          Training Finished.         =
-=======================================
-"""
-        print(msg)
-        return super().on_train_end(trainer, pl_module)
+from .default_callbacks import *
 
 
 class FrameworkBase(L.LightningModule, ABC):
@@ -105,9 +32,11 @@ class FrameworkBase(L.LightningModule, ABC):
 
     def __init__(
         self,
-        # model params
+        # model components
         backbone: nn.Module,
         head: nn.Module,
+        # callbacks
+        callbacks: list[L.Callback],
         # training params
         lr: float,
         max_epochs: int,
@@ -118,16 +47,11 @@ class FrameworkBase(L.LightningModule, ABC):
         self.backbone = backbone
         self.head = head
 
+        self.callbacks = callbacks
+
         self.lr = lr
         self.max_epochs = max_epochs
         self.max_steps = max_steps
-
-        self.callbacks = [
-            ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
-            RichModelSummary(max_depth=-1),
-            RichProgressBar(),
-            TensorboardCallback(),
-        ]
 
     @property
     def framework_trainer(self) -> L.Trainer:
@@ -171,12 +95,12 @@ class FrameworkBase(L.LightningModule, ABC):
     def on_train_start(self) -> None:
         self.logger.log_hyperparams(self.hparams)  # type: ignore
         msg = f"""
-Hyperparameters:
-{self.hparams}
-=======================================
-=          Training Started.          =
-=======================================
-"""
+            Hyperparameters:
+            {self.hparams}
+            =======================================
+            =          Training Started.          =
+            =======================================
+            """
         print(msg)
         return super().on_train_start()
 

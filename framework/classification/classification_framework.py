@@ -1,5 +1,6 @@
 # Author: Sun LuoHao
 # All rights reserved
+from operator import call
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
@@ -7,8 +8,8 @@ import numpy as np
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch import Tensor
 from abc import ABC, abstractmethod
-from torchmetrics import Accuracy, F1Score, Precision, Recall
-from .framework_base import FrameworkBase
+from ..framework_base.framework_base import FrameworkBase
+from .callbacks import get_classification_callbacks
 
 
 class ClassificationFramework(FrameworkBase, ABC):
@@ -37,69 +38,48 @@ class ClassificationFramework(FrameworkBase, ABC):
         max_epochs: int,
         max_steps: int,
     ) -> None:
-        super().__init__(backbone, head, lr, max_epochs, max_steps)
+        callbacks = get_classification_callbacks(num_classes)
+        super().__init__(backbone, head, callbacks, lr, max_epochs, max_steps)
         self.num_classes = num_classes
-        self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
 
     def loss(self, output: Tensor, target: Tensor) -> Tensor:
         return F.cross_entropy(output, target)
 
-    def compute_and_log_metrics(
-        self, y_hat: Tensor, y: Tensor, prefix: str, **log_kwargs
-    ) -> None:
-
-        metrics = {
-            "accuracy": self.accuracy(y_hat, y),
-            # 'f1': self.f1(y_hat, y),
-            # 'precision': self.precision(y_hat, y),
-            # 'recall': self.recall(y_hat, y)
-        }
-        for metric_name, metric_value in metrics.items():
-            self.log(f"{prefix}_{metric_name}", metric_value, **log_kwargs)
-
     def training_step(
         self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Any]:
+    ) -> Mapping[str, Tensor]:
+
         x, y = batch
         y_hat = self.forward(x)
-
         loss = self.loss(y_hat, y)
-        self.log(
-            "train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True
-        )
-        self.compute_and_log_metrics(
-            y_hat, y, "train", on_step=True, on_epoch=False, prog_bar=True, logger=True
-        )
 
         return {"loss": loss, "y": y, "y_hat": y_hat}
 
     def validation_step(
         self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Any]:
+    ) -> Mapping[str, Tensor]:
+
         x, y = batch
         y_hat = self.forward(x)
         loss = self.loss(y_hat, y)
-        self.log("val_loss", loss, prog_bar=True, logger=True)
-        self.compute_and_log_metrics(y_hat, y, "val", prog_bar=True, logger=True)
 
         return {"loss": loss, "y": y, "y_hat": y_hat}
 
-    def test_step(self, batch: Iterable[Tensor], batch_idx: int) -> Mapping[str, Any]:
+    def test_step(
+        self, batch: Iterable[Tensor], batch_idx: int
+    ) -> Mapping[str, Tensor]:
+        
         x, y = batch
         y_hat = self.forward(x)
         loss = self.loss(y_hat, y)
-        self.log(
-            "test_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
-        )
-        self.compute_and_log_metrics(
-            y_hat, y, "test", on_step=False, on_epoch=True, prog_bar=True, logger=True
-        )
 
         return {"loss": loss, "y": y, "y_hat": y_hat}
 
     def predict_step(
         self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Any]:
+    ) -> Mapping[str, Tensor]:
+        
         x, y = batch
         y_hat = self.forward(x)
+        
         return {"y": y, "y_hat": y_hat}

@@ -2,7 +2,7 @@ from typing import Callable
 from requests import head
 from torch import Tensor
 from torch.nn.modules import Module
-from Modules.framework.autoencoding_framework import AutoEncodingFramework
+from framework.autoencoding.autoencoding_framework import AutoEncodingFramework
 from Modules.backbones import patchtst, mlp
 from Modules.heads import autoencoding_heads
 from Modules.components.activations import get_activation_fn
