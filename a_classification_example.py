@@ -1,15 +1,21 @@
-'''
+"""
 a .py version of the notebook example.ipynb
-'''
+"""
+
+
 def main():
     import torch
 
     # Step 1. Choose a dataset (L.LightningDataModule)
-    from data.bearing_fault_prediction.raw.fault_prediction_datamodule import FaultPredictionDataModule
+    from data.bearing_fault_prediction.raw.fault_prediction_datamodule import (
+        FaultPredictionDataModule,
+    )
+
     data_module = FaultPredictionDataModule()
 
     # Step 2. Choose a model (ClassificationFramework from models.classification_models)
     from Modules.models.classification_models import SimpleConv1dClassificationModel
+
     model = SimpleConv1dClassificationModel(
         in_features=1,
         num_classes=4,
@@ -18,8 +24,7 @@ def main():
         stride=8,
         padding=0,
         pool_size=8,
-        activation='softplus',
-
+        activation="softplus",
         lr=1e-3,
         max_epochs=10,
     )
@@ -52,5 +57,5 @@ def main():
     print(torch.softmax(y, dim=-1))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

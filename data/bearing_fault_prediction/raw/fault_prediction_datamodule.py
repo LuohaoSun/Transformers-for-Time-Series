@@ -13,9 +13,7 @@ from rich.progress import Progress
 
 
 class FaultPredictionDataModule(LightningDataModule):
-    """DataModule for fault prediction task.
-
-    """
+    """DataModule for fault prediction task."""
 
     def __init__(
         self,
@@ -38,7 +36,7 @@ class FaultPredictionDataModule(LightningDataModule):
     @property
     def num_classes(self) -> int:
         return 4
-    
+
     @property
     def shape(self) -> Tuple[int, int, int]:
         return (self.batch_size, 4096, 1)
@@ -70,31 +68,32 @@ class FaultPredictionDataModule(LightningDataModule):
         else:
             self.batch_size_per_device = self.batch_size
 
-        if not hasattr(self, 'data_train'):
+        if not hasattr(self, "data_train"):
             self.data_train, self.data_val, self.data_test = self.prepare_datasets()
 
     def prepare_datasets(self):
-        print('Preparing datasets...')
+        print("Preparing datasets...")
         # read 4 types of samples:
         sample_i_datasets = []
         with Progress() as progress:
             task = progress.add_task("[green]Reading samples...", total=4)
             for i in range(4):
-                sample_i_dir = self.train_data_dir + str(i) + '/'
+                sample_i_dir = self.train_data_dir + str(i) + "/"
                 sample_i_files = os.listdir(sample_i_dir)
-                progress.update(task, advance=1,
-                                description=f"Reading samples {i}")
-                sample_i = [np.loadtxt(sample_i_dir + '/' + file)
-                            for file in sample_i_files]
+                progress.update(task, advance=1, description=f"Reading samples {i}")
+                sample_i = [
+                    np.loadtxt(sample_i_dir + "/" + file) for file in sample_i_files
+                ]
                 sample_i_dataset = List2Dataset(sample_i, i, self.transforms)
                 sample_i_datasets.append(sample_i_dataset)
         train_dataset = ConcatDataset(sample_i_datasets)
         # random split train, val and test dataset:
         train_size, val_size, test_size = self.train_val_test_split
         train_dataset, val_dataset, test_dataset = random_split(
-            train_dataset, [train_size, val_size, test_size])
+            train_dataset, [train_size, val_size, test_size]
+        )
         # TODO: make 4 types of samples balanced in 3 datasets
-        print('datasets prepared.')
+        print("datasets prepared.")
         return train_dataset, val_dataset, test_dataset
 
     def train_dataloader(self) -> DataLoader[Any]:
@@ -138,24 +137,27 @@ class FaultPredictionDataModule(LightningDataModule):
 
 
 class List2Dataset(Dataset):
-    def __init__(self,
-                 sample_list: list[np.ndarray] | list[Tensor],
-                 label: int | str | Tensor,
-                 transform: Callable[[Tensor], Tensor] | Callable[[
-                     np.ndarray], np.ndarray] | None = None
-                 ) -> None:
+    def __init__(
+        self,
+        sample_list: list[np.ndarray] | list[Tensor],
+        label: int | str | Tensor,
+        transform: (
+            Callable[[Tensor], Tensor] | Callable[[np.ndarray], np.ndarray] | None
+        ) = None,
+    ) -> None:
         super().__init__()
         if isinstance(label, str):
             label = torch.tensor(int(label), dtype=torch.long)
         elif isinstance(label, int):
             label = torch.tensor(label, dtype=torch.long)
         if isinstance(sample_list[0], np.ndarray):
-            sample_list: list[Tensor] = [torch.tensor(x, dtype=torch.float32)
-                                         for x in sample_list]
+            sample_list: list[Tensor] = [
+                torch.tensor(x, dtype=torch.float32) for x in sample_list
+            ]
         if len(sample_list[0].shape) < 3:
             sample_list = [x.unsqueeze(dim=-1) for x in sample_list]
         if transform:
-            sample_list = [transform(x) for x in sample_list]   # type: ignore
+            sample_list = [transform(x) for x in sample_list]  # type: ignore
         self.samples = [(x, label) for x in sample_list]
 
     def __getitem__(self, index):
@@ -166,22 +168,24 @@ class List2Dataset(Dataset):
 
 
 class sample_transform:
-    def __init__(self, transform: Union[str, Callable[[Tensor], Tensor]] = 'z_score') -> None:
-        print(f'{transform} sample transform initialized.')
+    def __init__(
+        self, transform: Union[str, Callable[[Tensor], Tensor]] = "z_score"
+    ) -> None:
+        print(f"{transform} sample transform initialized.")
         if isinstance(transform, str):
 
-            if transform == 'p2':
+            if transform == "p2":
                 self.transform = self.p2
-            elif transform == 'z_score':
+            elif transform == "z_score":
                 self.transform = self.z_score
             else:
                 raise ValueError(
-                    f'Invalid transform name: {transform}. Use "p2" or "z_score" instead.')
+                    f'Invalid transform name: {transform}. Use "p2" or "z_score" instead.'
+                )
         elif callable(transform):
             self.transform = transform
         else:
-            raise ValueError(
-                'Invalid transform type. Use str or callable instead.')
+            raise ValueError("Invalid transform type. Use str or callable instead.")
 
     @property
     def z_score(self) -> Callable[[Tensor], Tensor]:
@@ -192,11 +196,11 @@ class sample_transform:
         return lambda sample: torch.nn.functional.normalize(sample, p=2, dim=-1)
 
     def __call__(self, sample: Tensor) -> Tensor:
-        '''
+        """
         input: sample: torch.Tensor, shape=(seq_len)
         output: sample: torch.Tensor, shape=(seq_len)
-        '''
+        """
         return self.transform(sample)
 
     def __repr__(self) -> str:
-        raise NotImplementedError('sample transform not implemented yet.')
+        raise NotImplementedError("sample transform not implemented yet.")
