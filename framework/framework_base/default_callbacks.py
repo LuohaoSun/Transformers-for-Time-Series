@@ -1,26 +1,34 @@
 import lightning as L
-import torch.nn as nn
-import torch
 import subprocess
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
+from typing import Mapping
 from torch import Tensor
-from abc import ABC, abstractmethod
 from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     RichModelSummary,
     RichProgressBar,
 )
+
 from rich import print
+
+__all__ = [
+    "get_default_callbacks",
+    "LaunchTensorboard",
+    "LogHyperparams",
+    "LogLoss",
+    "LoadCheckpoint",
+]
 
 
 def get_default_callbacks() -> list[L.Callback]:
     return [
+        # lightning built-in callbacks
         ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
         RichModelSummary(max_depth=-1),
         RichProgressBar(),
+        # framework default callbacks
         LaunchTensorboard(),
+        LogHyperparams(),
+        LogLoss(),
         LoadCheckpoint(),
     ]
 
@@ -28,7 +36,7 @@ def get_default_callbacks() -> list[L.Callback]:
 class LaunchTensorboard(L.Callback):
     def __init__(self) -> None:
         super().__init__()
-        self.proc: Optional[subprocess.Popen] = None
+        self.proc: subprocess.Popen | None = None
         pass
 
     def on_train_start(self, trainer, pl_module) -> None:
@@ -57,38 +65,115 @@ class LaunchTensorboard(L.Callback):
         return
 
 
+class LogHyperparams(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def on_train_start(self, trainer, pl_module) -> None:
+        trainer.logger.log_hyperparams(pl_module.hparams)  # type: ignore
+        msg = f"""
+Hyperparameters:
+{pl_module.hparams}
+=======================================
+=          Training Started.          =
+=======================================
+"""
+        print(msg)
+        return super().on_train_start(trainer, pl_module)
+
+
+class LogLoss(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def on_train_batch_end(
+        self,
+        trainer: L.Trainer,
+        pl_module: L.LightningModule,
+        outputs: Mapping[str, Tensor],
+        batch,
+        batch_idx,
+    ) -> None:
+
+        pl_module.log(
+            "train_loss", outputs["loss"], on_step=True, on_epoch=False, prog_bar=True
+        )
+
+        return super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx)
+
+    def on_validation_batch_end(
+        self,
+        trainer: L.Trainer,
+        pl_module: L.LightningModule,
+        outputs: Mapping[str, Tensor],
+        batch,
+        batch_idx,
+    ) -> None:
+
+        pl_module.log(
+            "val_loss", outputs["loss"], on_step=False, on_epoch=True, prog_bar=True
+        )
+
+        return super().on_validation_batch_end(
+            trainer, pl_module, outputs, batch, batch_idx
+        )
+
+    def on_test_batch_end(
+        self,
+        trainer: L.Trainer,
+        pl_module: L.LightningModule,
+        outputs: Mapping[str, Tensor],
+        batch,
+        batch_idx,
+    ) -> None:
+
+        pl_module.log("test_loss", outputs["loss"], on_step=False, on_epoch=True)
+
+        return super().on_test_batch_end(trainer, pl_module, outputs, batch, batch_idx)
+
+
 class LoadCheckpoint(L.Callback):
+
     def __init__(self) -> None:
         super().__init__()
         return
 
     def on_train_end(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
 
+        ckpt_info: tuple[str, float, int] = self.get_ckpt_info_from_trainer(trainer)
+        self.load_ckpt_from_path(pl_module, ckpt_info[0])
+        self.print_success_msg(ckpt_info)
+
+        return super().on_train_end(trainer, pl_module)
+
+    def get_ckpt_info_from_trainer(self, trainer: L.Trainer) -> tuple[str, float, int]:
+
         checkpoint_callback: ModelCheckpoint = trainer.checkpoint_callback  # type: ignore
-        best_val_loss = checkpoint_callback.best_model_score
-        best_val_loss_epoch = (
-            checkpoint_callback.best_model_path.split(  # FIXME: Windows path separator
-                "/"
-            )[-1]
-            .split("=")[1]
-            .split("-")[0]
-        )
+        best_model_path = checkpoint_callback.best_model_path
+        best_val_loss = float(checkpoint_callback.best_model_score.item())  # type: ignore
+        best_val_loss_epoch = int(best_model_path.split("epoch=")[1].split("-")[0])
 
-        # FIXME: log_hyperparams does not work
-        trainer.logger.log_hyperparams(  # type: ignore
-            pl_module.hparams, {"hp_metric": best_val_loss}  # type: ignore
-        )  # type: ignore
+        return best_model_path, best_val_loss, best_val_loss_epoch
 
-        pl_module = pl_module.__class__.load_from_checkpoint(
-            checkpoint_callback.best_model_path
-        )
+    def load_ckpt_from_path(
+        self, pl_module: L.LightningModule, best_model_path: str
+    ) -> L.LightningModule:
+
+        pl_module = pl_module.__class__.load_from_checkpoint(best_model_path)
+
+        return pl_module
+
+    def print_success_msg(self, ckpt_info: tuple[str, float, int]) -> None:
+
+        best_model_path, best_val_loss, best_val_loss_epoch = ckpt_info
         msg = f"""
             Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
-            Checkpoint saved at {checkpoint_callback.best_model_path}
+            Checkpoint saved at {best_model_path}
             Best Model Loaded from Checkpoint.        
             =======================================
             =          Training Finished.         =
             =======================================
             """
         print(msg)
-        return super().on_train_end(trainer, pl_module)
+
+        return

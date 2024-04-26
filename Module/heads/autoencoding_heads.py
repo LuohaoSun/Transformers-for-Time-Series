@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from torch import Tensor
-from Modules.components.activations import get_activation_fn
+from Module.components.activations import get_activation_fn
 
 """
 所有头部均未添加softmax层，因为nn.CrossEntropyLoss会自动添加softmax层。

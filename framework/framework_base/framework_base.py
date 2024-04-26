@@ -12,117 +12,189 @@ from torch import Tensor
 from abc import ABC, abstractmethod
 from rich import print
 from .default_callbacks import *
+from .default_callbacks import get_default_callbacks
 
 
 class FrameworkBase(L.LightningModule, ABC):
     """
-    用于时间序列任务的基础模型类，封装了backbone-head的结构，并实现了forward, configure_optimizers, trainer, logger.
-    子类通过实现loss, training_step, val_step, test_step, predict_step等方法定制各种下游任务模型。
-    properties:
-        backbone: nn.Module
-        head: nn.Module
+    Base model class for time series tasks.
 
-    methods:
-        forward: Tensor -> Tensor
-        fit: L.LightningDataModule -> None. Model trains itself.
-        test: L.LightningDataModule -> None. Model tests itself.
-        run_training: L.LightningDataModule -> None. Same as fit.
-        run_testing: L.LightningDataModule -> None. Same as test.
+    This class provides the following functionalities:
+    1. Defines the inheritance specification of L.LightningModule in the project. Subclasses need to implement methods such as loss, training_step, val_step, test_step.
+    2. Encapsulates the structure of backbone-head and implements methods such as forward, configure_optimizers.
+    3. Defines methods such as fit, test, run_training, run_testing for easy invocation.
+
+    Properties:
+        backbone (nn.Module): The backbone module.
+        head (nn.Module): The head module.
+
+    Methods:
+        forward(x: Tensor) -> Tensor:
+            Performs forward pass on the input tensor.
+
+        fit(datamodule: L.LightningDataModule) -> None:
+            Trains the model using the provided LightningDataModule.
+
+        test(datamodule: L.LightningDataModule) -> None:
+            Tests the model using the provided LightningDataModule.
+
+        run_training(datamodule: L.LightningDataModule) -> None:
+            Same as fit. Trains the model using the provided LightningDataModule.
+
+        run_testing(datamodule: L.LightningDataModule) -> None:
+            Same as test. Tests the model using the provided LightningDataModule.
     """
 
     def __init__(
         self,
-        # model components
         backbone: nn.Module,
         head: nn.Module,
-        # callbacks
-        callbacks: list[L.Callback],
-        # training params
+        additional_callbacks: list[L.Callback],
         lr: float,
         max_epochs: int,
         max_steps: int,
     ) -> None:
+        """
+        Initializes the FrameworkBase.
 
+        Args:
+            backbone (nn.Module): The backbone module.
+            head (nn.Module): The head module.
+            additional_callbacks (list[L.Callback]): Additional callbacks for the trainer.
+            lr (float): The learning rate for the optimizer.
+            max_epochs (int): The maximum number of epochs for training.
+            max_steps (int): The maximum number of steps for training.
+        """
         super().__init__()
+
         self.backbone = backbone
         self.head = head
 
-        self.callbacks = callbacks
-
-        self.lr = lr
-        self.max_epochs = max_epochs
-        self.max_steps = max_steps
-
-    @property
-    def framework_trainer(self) -> L.Trainer:
-        framework_trainer = L.Trainer(
-            max_epochs=self.max_epochs,
-            max_steps=self.max_steps,
-            callbacks=self.callbacks,
+        self.framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self.framework_trainer = L.Trainer(
+            max_epochs=max_epochs,
+            max_steps=max_steps,
+            callbacks=get_default_callbacks() + additional_callbacks,
             accelerator="auto",
         )
-        return framework_trainer
+
+    @abstractmethod
+    def loss(self, output: Tensor, target: Tensor) -> Tensor:
+        """
+        Calculates the loss between the model's output and the target.
+
+        Args:
+            output (Tensor): The model's output tensor.
+            target (Tensor): The target tensor.
+
+        Returns:
+            Tensor: The calculated loss tensor.
+        """
+        ...
+
+    @abstractmethod
+    def training_step(
+        self, batch: Iterable[Tensor], batch_idx: int
+    ) -> Mapping[str, Tensor]:
+        """
+        Performs a single training step.
+
+        Args:
+            batch (Iterable[Tensor]): The input batch.
+            batch_idx (int): The index of the batch.
+
+        Returns:
+            Mapping[str, Tensor]: The mapping of output tensors.
+        """
+        ...
+
+    @abstractmethod
+    def validation_step(
+        self, batch: Iterable[Tensor], batch_idx: int
+    ) -> Mapping[str, Tensor]:
+        """
+        Performs a single validation step.
+
+        Args:
+            batch (Iterable[Tensor]): The input batch.
+            batch_idx (int): The index of the batch.
+
+        Returns:
+            Mapping[str, Tensor]: The mapping of output tensors.
+        """
+        ...
+
+    @abstractmethod
+    def test_step(
+        self, batch: Iterable[Tensor], batch_idx: int
+    ) -> Mapping[str, Tensor]:
+        """
+        Performs a single testing step.
+
+        Args:
+            batch (Iterable[Tensor]): The input batch.
+            batch_idx (int): The index of the batch.
+
+        Returns:
+            Mapping[str, Tensor]: The mapping of output tensors.
+        """
+        ...
 
     def forward(self, x: Tensor) -> Tensor:
         """
-        input: (batch_size, in_seq_len, in_features)
-        output: (batch_size, out_seq_len, out_features)
+        Performs forward pass on the input tensor.
+
+        Args:
+            x (Tensor): The input tensor of shape (batch_size, in_seq_len, in_features).
+
+        Returns:
+            Tensor: The output tensor of shape (batch_size, out_seq_len, out_features).
         """
         x = self.backbone(x)
         x = self.head(x)
         return x
 
     def configure_optimizers(self) -> Dict[str, Union[Optimizer, LRScheduler]]:
-        # models of industrial usage do not need much hyperparameter tuning,
-        # so I simply use Adam optimizer with default parameters here.
-        # Flexibility can be added in the future.
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        return {"optimizer": optimizer}
+        """
+        Configures the optimizer for training.
 
-    def fit(self, datamodule: L.LightningDataModule):
+        Returns:
+            Dict[str, Union[Optimizer, LRScheduler]]: The optimizer configuration.
+        """
+        return {"optimizer": self.framework_optimizer}
+
+    def fit(self, datamodule: L.LightningDataModule) -> None:
+        """
+        Trains the model using the provided LightningDataModule.
+
+        Args:
+            datamodule (L.LightningDataModule): The LightningDataModule for training.
+        """
         self.framework_trainer.fit(self, datamodule)
-        return
 
-    def test(self, datamodule: L.LightningDataModule):
-        return self.framework_trainer.test(self, datamodule)
+    def test(self, datamodule: L.LightningDataModule) -> None:
+        """
+        Tests the model using the provided LightningDataModule.
 
-    def run_training(self, datamodule: L.LightningDataModule):
+        Args:
+            datamodule (L.LightningDataModule): The LightningDataModule for testing.
+        """
+        self.framework_trainer.test(self, datamodule)
+
+    def run_training(self, datamodule: L.LightningDataModule) -> None:
+        """
+        Same as fit. Trains the model using the provided LightningDataModule.
+
+        Args:
+            datamodule (L.LightningDataModule): The LightningDataModule for training.
+        """
         return self.fit(datamodule)
 
-    def run_testing(self, datamodule: L.LightningDataModule):
+    def run_testing(self, datamodule: L.LightningDataModule) -> None:
+        """
+        Same as test. Tests the model using the provided LightningDataModule.
+
+        Args:
+            datamodule (L.LightningDataModule): The LightningDataModule for testing.
+        """
         return self.test(datamodule)
-
-    def on_train_start(self) -> None:
-        self.logger.log_hyperparams(self.hparams)  # type: ignore
-        msg = f"""
-            Hyperparameters:
-            {self.hparams}
-            =======================================
-            =          Training Started.          =
-            =======================================
-            """
-        print(msg)
-        return super().on_train_start()
-
-    @abstractmethod
-    def loss(self, output: Tensor, target: Tensor) -> Tensor: ...
-
-    @abstractmethod
-    def training_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]: ...
-
-    @abstractmethod
-    def validation_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]: ...
-
-    @abstractmethod
-    def test_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]: ...
-
-    @abstractmethod
-    def predict_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]: ...

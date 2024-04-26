@@ -1,11 +1,11 @@
-from typing import Callable
+from typing import Callable, Tuple
 from requests import head
 from torch import Tensor
 from torch.nn.modules import Module
 from framework.autoencoding.autoencoding_framework import AutoEncodingFramework
-from Modules.backbones import patchtst, mlp
-from Modules.heads import autoencoding_heads
-from Modules.components.activations import get_activation_fn
+from Module.backbones import patchtst, mlp
+from Module.heads import autoencoding_heads
+from Module.components.activations import get_activation_fn
 
 
 class AutoEncoder(AutoEncodingFramework):
@@ -16,6 +16,10 @@ class AutoEncoder(AutoEncodingFramework):
         encoder_hidden_len: tuple[int, ...],
         encoder_out_seq_len: int,
         activation: str | Callable[[Tensor], Tensor],
+        # logging params
+        every_n_epochs: int,
+        figsize: Tuple[int, int],
+        dpi: int,
         # training params
         lr: float,
         max_epochs: int,
@@ -41,8 +45,14 @@ class AutoEncoder(AutoEncodingFramework):
             activation=activation,
         )
         super().__init__(
+            # model params
             backbone=backbone,
             head=head,
+            # logging params
+            every_n_epochs=every_n_epochs,
+            figsize=figsize,
+            dpi=dpi,
+            # training params
             lr=lr,
             max_epochs=max_epochs,
             max_steps=max_steps,
@@ -69,6 +79,10 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
         nhead: int,
         activation: str | Callable[[Tensor], Tensor],
         norm_first: bool,
+        # logging params
+        every_n_epochs: int,
+        figsize: Tuple[int, int],
+        dpi: int,
         # training params
         lr: float,
         max_epochs: int,
@@ -101,21 +115,27 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
         """
         self.save_hyperparameters()
         activation = get_activation_fn(activation)
+        backbone = patchtst.PatchTSTBackbone(
+            in_features,
+            d_model,
+            patch_size,
+            patch_stride,
+            num_layers,
+            dropout,
+            nhead,
+            activation,
+            norm_first,
+        )
+        head = autoencoding_heads.MLPHead(d_model, d_model * 4, in_features, activation)
+
         super().__init__(
-            backbone=patchtst.PatchTSTBackbone(
-                in_features,
-                d_model,
-                patch_size,
-                patch_stride,
-                num_layers,
-                dropout,
-                nhead,
-                activation,
-                norm_first,
-            ),
-            head=autoencoding_heads.MLPHead(
-                d_model, d_model * 4, in_features, activation
-            ),
+            backbone=backbone,
+            head=head,
+            # logging params
+            every_n_epochs=every_n_epochs,
+            figsize=figsize,
+            dpi=dpi,
+            # training params
             lr=lr,
             max_epochs=max_epochs,
             max_steps=max_steps,

@@ -1,22 +1,16 @@
 # Author: Sun LuoHao
 # All rights reserved
 
-from gc import callbacks
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-import numpy as np
-import tensorboard
-from lightning.pytorch.callbacks import Callback
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable, Tuple
+from typing import Mapping, Iterable, Tuple
 from torch import Tensor
-from torch.utils.tensorboard.writer import SummaryWriter
-from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
+
 from abc import ABC, abstractmethod
 from ..framework_base.framework_base import FrameworkBase
-from .autoencoding_callbacks import get_autoencoding_callbacks
+from .autoencoding_callbacks import ViAndLog2Tensorboard
 
 
 class RandomMask(L.LightningModule):
@@ -28,6 +22,7 @@ class RandomMask(L.LightningModule):
         mask_length (int, optional): The length of the masked tokens. Defaults to 1.
             A mask_length > 1 will implement patch masking, where the length of mask and non-masked values are both n*mask_length.
         TODO: learnable mask token
+        TODO: customize loss params
         FIXME: not test for mask_ratio == 0
         """
         super().__init__()
@@ -121,9 +116,9 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         backbone: nn.Module,
         head: nn.Module,
         # logging params
-        every_n_epochs,
-        figsize,
-        dpi,
+        every_n_epochs: int,
+        figsize: Tuple[int, int],
+        dpi: int,
         # training params
         lr: float,
         max_epochs: int,
@@ -138,26 +133,45 @@ class AutoEncodingFramework(FrameworkBase, ABC):
         Args:
             backbone (nn.Module): The backbone module.
             head (nn.Module): The head module.
-            
+
             every_n_epochs (int): log the visualization figures every n epochs.
             figsize (Tuple[int, int]): The size of the figure.
             dpi (int): The dpi of the figure.
-            
+
             mask_ratio (float): The ratio of masked tokens in the input sequence. Defaults to 0.
             mask_length (int, optional): The length of the masked tokens. Defaults to 1.
                 A mask_length > 1 will implement patch masking, where the length of mask and non-masked values are both n*mask_length.
             loss_type (str, optional): The type of loss to be used. Can be 'full', 'masked', or 'hybrid'.
         """
-        callbacks = get_autoencoding_callbacks(every_n_epochs, figsize, dpi)
-        super().__init__(backbone, head, callbacks, lr, max_epochs, max_steps)
-        self.random_mask = RandomMask(mask_ratio, mask_length)
-        # TODO: customize loss params
-        self.loss_func = MaskedLoss(loss_type=loss_type)
         assert (
             mask_ratio > 0 or loss_type == "full"
         ), "mask_ratio should be greater than 0 when loss_type is not 'full'"
-        self.mask_ratio = mask_ratio
-        # TODO: customize plotter params
+
+        super().__init__(
+            backbone=backbone,
+            head=head,
+            additional_callbacks=[ViAndLog2Tensorboard(every_n_epochs, figsize, dpi)],
+            lr=lr,
+            max_epochs=max_epochs,
+            max_steps=max_steps,
+        )
+
+        self.random_mask = RandomMask(mask_ratio, mask_length)
+        self.loss_func = MaskedLoss(loss_type=loss_type)
+
+    def encode(self, x: Tensor) -> Tensor:
+        """
+        input: (batch_size, seq_len, n_features)
+        output: (batch_size, seq_len, hidden_features)
+        """
+        return self.backbone(x)
+
+    def decode(self, x: Tensor) -> Tensor:
+        """
+        input: (batch_size, seq_len, hidden_features)
+        output: (batch_size, seq_len, n_features)
+        """
+        return self.head(x)
 
     def loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
         """
@@ -170,30 +184,15 @@ class AutoEncodingFramework(FrameworkBase, ABC):
     def training_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
-        step_output = self.test_step(batch, batch_idx)
-        loss = step_output["loss"]
-        self.log("train_loss", loss, prog_bar=True)
-        return step_output
 
-    def validation_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]:
-        step_output = self.test_step(batch, batch_idx)
-        loss = step_output["loss"]
-        self.log("val_loss", loss, prog_bar=True)
-        return step_output
-
-    def test_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]:
         x, y = batch
         masked_input = self.random_mask(x)
         mask = self.random_mask.mask
-        x_hat = self.forward(masked_input)
 
+        x_hat = self.forward(masked_input)
         loss = self.loss(x, x_hat)
 
-        if self.mask_ratio > 0:
+        if self.random_mask.mask_ratio > 0:
             return {
                 "loss": loss,
                 "original": x,
@@ -210,35 +209,14 @@ class AutoEncodingFramework(FrameworkBase, ABC):
                 "output": x_hat,
             }
 
-    def predict_step(
+    def validation_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
-        raise NotImplementedError()
 
-    def encode(self, x: Tensor) -> Tensor:
-        """
-        input: (batch_size, seq_len, n_features)
-        output: (batch_size, seq_len, hidden_features)
-        """
-        return self.backbone(x)
+        return self.training_step(batch, batch_idx)
 
-    def decode(self, x: Tensor) -> Tensor:
-        """
-        input: (batch_size, seq_len, hidden_features)
-        output: (batch_size, seq_len, n_features)
-        """
-        return self.head(x)
+    def test_step(
+        self, batch: Iterable[Tensor], batch_idx: int
+    ) -> Mapping[str, Tensor]:
 
-    def on_validation_batch_end(
-        self,
-        outputs: Mapping[str, Tensor],
-        batch: Any,
-        batch_idx: int,
-        dataloader_idx: int = 0,
-    ) -> None:
-        self.series_plotter(
-            self.trainer, self, outputs, batch, batch_idx, dataloader_idx
-        )
-        return super().on_validation_batch_end(
-            outputs, batch, batch_idx, dataloader_idx
-        )
+        return self.training_step(batch, batch_idx)

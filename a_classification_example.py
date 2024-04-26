@@ -14,7 +14,7 @@ def main():
     data_module = FaultPredictionDataModule()
 
     # Step 2. Choose a model (ClassificationFramework from models.classification_models)
-    from Modules.models.classification_models import SimpleConv1dClassificationModel
+    from Module.models.classification_models import SimpleConv1dClassificationModel
 
     model = SimpleConv1dClassificationModel(
         in_features=1,

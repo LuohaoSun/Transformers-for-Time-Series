@@ -2,10 +2,10 @@ import torch.nn as nn
 import torch
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch import Tensor
-from Modules.framework import ClassificationFramework
-from Modules.components.activations import get_activation_fn
-from Modules.backbones.patchtst import PatchTSTEncoder
-from Modules.heads.classification_heads import *
+from framework import ClassificationFramework
+from Module.components.activations import get_activation_fn
+from Module.backbones.patchtst import PatchTSTEncoder
+from Module.heads.classification_heads import *
 
 
 class CustomClassificationModel(ClassificationFramework):

@@ -1,34 +1,20 @@
+from tkinter import image_names
 import lightning as L
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
-from lightning.pytorch.loggers import TensorBoardLogger
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
+from typing import Mapping, Iterable
 from torch import Tensor
+from torch.utils.tensorboard.writer import SummaryWriter
 from rich import print
-from torchmetrics import Accuracy, F1Score, Precision, Recall
-from traitlets import default
-from ..framework_base.default_callbacks import get_default_callbacks
 
 
-def get_autoencoding_callbacks(
-    every_n_epochs=20,
-    figsize=(10, 5),
-    dpi=300,
-) -> list[L.Callback]:
-    default_callbacks = get_default_callbacks()
-    autoencoder_visulization = AutoEncoderVisulization(
-        every_n_epochs=20,
-        figsize=(10, 5),
-        dpi=300,
-    )
-    return [autoencoder_visulization] + default_callbacks
-
-
-class AutoEncoderVisulization(L.Callback):
+class ViAndLog2Tensorboard(L.Callback):
     """
-    a callback for auto encoding framework, used to plot original and reconstructed series.
-    rely on matplotlib and tensorboard.
+    a callback for auto encoding framework.
+    Used to visualize series returned in xxx_steps(e.g. original and reconstructed series),
+    and save the figure to tensorboard.
+    Rely on matplotlib and tensorboard.
     """
 
     def __init__(
@@ -44,21 +30,42 @@ class AutoEncoderVisulization(L.Callback):
     def __call__(
         self,
         trainer: L.Trainer,
-        pl_module: L.LightningModule,
         outputs: Mapping[str, Tensor],
-        batch: Iterable[Tensor],
         batch_idx: int,
-        dataloader_idx: int = 0,
     ) -> None:
 
-        if trainer.current_epoch % self.every_n_epochs == 0 and batch_idx == 0:
-            experiment: SummaryWriter = trainer.logger.experiment  # type: ignore
+        if trainer.current_epoch % self.every_n_epochs != 0:
+            return  # only applied to the every_n_epochs-th epoch.
+        if batch_idx != 0:
+            return  # only applied to the first batch of
 
-            for key, value in outputs.items():
-                if key == "loss":
-                    continue
-                img = self.plot_series({key: value})
-                experiment.add_figure(tag=f"{key}-{trainer.current_epoch}", figure=img)
+        def get_series_names(
+            outputs: Mapping[str, Tensor],
+        ) -> list[str]:
+            return [name for name in outputs if name != "loss"]
+
+        def get_image_names(series_names: list[str]) -> list[str]:
+            return [
+                f"{series_name}-Epoch{trainer.current_epoch}"
+                for series_name in series_names
+            ]
+
+        def get_images(
+            outputs: Mapping[str, Tensor], series_names: list[str]
+        ) -> list[Figure]:
+            return [
+                self.plot_series(outputs[series_name]) for series_name in series_names
+            ]
+
+        def log_images(images: list[Figure], image_names: list[str]) -> None:
+            tb_summary_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
+            for image_name, image in zip(image_names, images):
+                tb_summary_writer.add_figure(image_name, image)
+
+        series_names = get_series_names(outputs)
+        image_names = get_image_names(series_names)
+        images = get_images(outputs, series_names)
+        log_images(images, image_names)
 
     def on_validation_batch_end(
         self,
@@ -69,10 +76,11 @@ class AutoEncoderVisulization(L.Callback):
         batch_idx: int,
         dataloader_idx: int = 0,
     ) -> None:
-        self(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
+        self(trainer, outputs, batch_idx)
 
     def plot_series(self, series: Tensor | list[Tensor] | dict[str, Tensor]) -> Figure:
         """
+        TODO: 写得太难看了，需要重构
         all series should have the same shape if multiple series are passed.
         series: (batch_size, series_length) or (batch_size, series_length, n_features)
         only first nodes are plotted when the series has a third dimension.
@@ -96,6 +104,7 @@ class AutoEncoderVisulization(L.Callback):
 
     def sub_plot(self, series: Tensor, series_name: str | None = None):
         """
+        TODO: 写得太难看了，需要重构
         series: (batch_size, series_length) or (batch_size, series_length, num_nodes)
         only first plot_nodes nodes are plotted when the series has a third dimension.
         """
