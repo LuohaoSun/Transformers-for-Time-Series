@@ -1,4 +1,9 @@
 from .classification.classification_framework import ClassificationFramework
 from .autoencoding.autoencoding_framework import AutoEncodingFramework
-# from .forecasting.forecasting_framework import ForecastingFramework
-# from .regression.regression_framework import RegressionFramework
+from .forecasting.forecasting_framework import ForecastingFramework
+from .regression.regression_framework import RegressionFramework
+
+from .classification.classification_datamodule import ClassificationDataModule
+from .autoencoding.autoencoding_datamodule import AutoEncodingDataModule
+from .forecasting.forecasting_datamodule import ForecastingDataModule
+from .regression.regression_datamodule import RegressionDataModule
