@@ -5,8 +5,7 @@ from torch import Tensor
 from Module.components.activations import get_activation_fn
 
 """
-所有头部均未添加softmax层，因为nn.CrossEntropyLoss会自动添加softmax层。
-如果使用其他的损失函数，需要自定义头部。
+For a higher-performance, use other more advanced backbones as the head.
 """
 
 

@@ -1,6 +1,5 @@
 # Author: Sun LuoHao
 # All rights reserved
-from operator import call
 import lightning as L
 import torch.nn as nn
 import torch
@@ -77,6 +76,7 @@ class FrameworkBase(L.LightningModule, ABC):
             callbacks=get_default_callbacks() + additional_callbacks,
             accelerator="auto",
         )
+
 
     @abstractmethod
     def loss(self, output: Tensor, target: Tensor) -> Tensor:

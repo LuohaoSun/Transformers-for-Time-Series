@@ -1,5 +1,6 @@
 import lightning as L
 import torch.nn as nn
+import torch
 from lightning.pytorch.loggers import TensorBoardLogger
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch import Tensor
@@ -16,7 +17,8 @@ class ComputeAndLogMetrics2Tensorboard(L.Callback):
 
         self.metric_funcs = nn.ModuleDict(
             {
-                "mae": MeanAbsoluteError(),
+                "RMSE": RootMeanSquaredError(),
+                "MAE": MeanAbsoluteError(),
                 "mape": MeanAbsolutePercentageError(),
                 "r2": R2Score(),
                 "ev": ExplainedVariance(),
@@ -35,3 +37,11 @@ class ComputeAndLogMetrics2Tensorboard(L.Callback):
         }
         logger: TensorBoardLogger = trainer.logger  # type: ignore
         logger.log_metrics(metrics, step=trainer.global_step)
+        
+class RootMeanSquaredError(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.mse = nn.MSELoss()
+
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
+        return torch.sqrt(self.mse(y_hat, y))

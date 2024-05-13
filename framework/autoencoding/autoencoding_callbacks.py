@@ -1,4 +1,3 @@
-from tkinter import image_names
 import lightning as L
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,7 +5,6 @@ from matplotlib.figure import Figure
 from typing import Mapping, Iterable
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
-from rich import print
 
 
 class ViAndLog2Tensorboard(L.Callback):

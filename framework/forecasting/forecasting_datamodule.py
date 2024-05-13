@@ -1,40 +1,48 @@
 from typing import Tuple
 import lightning as L
 import pandas as pd
-
-from typing import IO, Any, Dict, Iterable, Optional, Union, cast
-
-from lightning_utilities import apply_to_collection
-from torch.utils.data import DataLoader, Dataset, IterableDataset
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, Dataset
 
 
 class ForecastingDataModule(L.LightningDataModule):
-    __doc__ = f"""
+    """
     __init__: load a csv file and convert it to a LightningDataModule.
     from_datasets: load a list of datasets and convert it to a LightningDataModule. See:
-    > {L.LightningDataModule.from_datasets.__doc__}
-
+    {L.LightningDataModule.from_datasets}
     """
 
     def __init__(
         self,
         csv_file_path: str,
+        stride: int,
         input_length: int,
         output_length: int,
         batch_size: int,
-        train_val_test_split: Tuple[float, float, float] = (0.7, 0.2, 0.1),
+        train_val_test_split: Tuple[float, float, float] = (0.6, 0.2, 0.2),
         num_workers: int = 0,
     ) -> None:
         super().__init__()
         self.file_path = csv_file_path
+        self.stride = stride
         self.input_length = input_length
         self.output_length = output_length
         self.batch_size = batch_size
         self.train_val_test_split = train_val_test_split
+        self.num_workers = num_workers
+
+    @property
+    def num_features(self):
+        if hasattr(self, "csv_data"):
+            return self.csv_data.shape[1]
+        else:
+            raise ValueError("csv_data is not loaded yet")
 
     def prepare_data(self) -> None:
         # download, IO, etc. Useful with shared filesystems
         # only called on 1 GPU/TPU in distributed
+        self.csv_data = pd.read_csv(self.file_path)
 
         return
 
@@ -43,18 +51,99 @@ class ForecastingDataModule(L.LightningDataModule):
         # called on every process in DDP
         assert sum(self.train_val_test_split) - 1 < 1e-6
         assert stage in (None, "fit", "validate", "test", "predict")
-        pass
 
-    def train_dataloader(self):
-        pass
+        if stage == "fit" and not hasattr(self, "train_dataset"):
+            self.train_data = self.csv_data.iloc[
+                : int(len(self.csv_data) * self.train_val_test_split[0])
+            ]
+            self.train_dataset = ForecastingDataset(
+                self.train_data.to_numpy(),
+                self.stride,
+                self.input_length,
+                self.output_length,
+            )
+        elif stage == "validate" and not hasattr(self, "val_dataset"):
+            self.val_data = self.csv_data.iloc[
+                int(len(self.csv_data) * self.train_val_test_split[0]) : int(
+                    len(self.csv_data)
+                    * (self.train_val_test_split[0] + self.train_val_test_split[1])
+                )
+            ]
+            self.val_dataset = ForecastingDataset(
+                self.val_data.to_numpy(),
+                self.stride,
+                self.input_length,
+                self.output_length,
+            )
+        elif stage == "test" and not hasattr(self, "test_dataset"):
+            self.test_data = self.csv_data.iloc[
+                int(
+                    len(self.csv_data)
+                    * (self.train_val_test_split[0] + self.train_val_test_split[1])
+                ) :
+            ]
+            self.test_dataset = ForecastingDataset(
+                self.test_data.to_numpy(),
+                self.stride,
+                self.input_length,
+                self.output_length,
+            )
+        else:
+            raise ValueError("Invalid stage")
+
+    def train_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+        )
 
     def val_dataloader(self):
-        pass
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
 
     def test_dataloader(self):
-        pass
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
+
+
+class ForecastingDataset(Dataset):
+    """
+    Split a (total length, dim) series to many (input_length, dim) and (output_length, dim) pairs.
+    """
+
+    def __init__(
+        self,
+        series: np.ndarray | pd.DataFrame,
+        stride: int,
+        input_length: int,
+        output_length: int,
+    ) -> None:
+        super().__init__()
+        self.samples = []
+        for i in range(0, len(series) - input_length - output_length, stride):
+            sample_x = series[i : i + input_length, :]
+            sample_x = torch.tensor(sample_x, dtype=torch.float32)
+            sample_y = series[i + input_length : i + input_length + output_length, :]
+            sample_y = torch.tensor(sample_y, dtype=torch.float32)
+            self.samples.append((sample_x, sample_y))
+
+    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.samples[index]
+
+    def __len__(self) -> int:
+        return len(self.samples)
 
 
 if __name__ == "__main__":
-    datamodule = ForecastingDataModule("", 1, 1, 1)
+
     pass
