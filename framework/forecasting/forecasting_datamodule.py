@@ -62,7 +62,6 @@ class ForecastingDataModule(L.LightningDataModule):
                 self.input_length,
                 self.output_length,
             )
-        elif stage == "validate" and not hasattr(self, "val_dataset"):
             self.val_data = self.csv_data.iloc[
                 int(len(self.csv_data) * self.train_val_test_split[0]) : int(
                     len(self.csv_data)

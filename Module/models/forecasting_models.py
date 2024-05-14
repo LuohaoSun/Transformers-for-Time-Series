@@ -17,11 +17,11 @@ class LSTM(ForecastingFramework):
         max_steps=-1,
         loss_type="mse",
     ):
-
+        self.save_hyperparameters()
         super().__init__(
             backbone=self.configure_backbone(
                 input_size,
-                hidden_size,
+                hidden_size // 2 if bidirectional else hidden_size,
                 num_layers,
                 bidirectional,
             ),
@@ -35,14 +35,19 @@ class LSTM(ForecastingFramework):
     def configure_backbone(
         self, input_size, hidden_size, num_layers, bidirectional
     ) -> nn.Module:
-        lstm = nn.LSTM(
-            input_size=hidden_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            bidirectional=bidirectional,
-            batch_first=True,
-        )
-        return lstm
+        class backbone(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.lstm = nn.LSTM(
+                    input_size=input_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    bidirectional=bidirectional,
+                    batch_first=True,
+                )
+            def forward(self,x:Tensor) -> Tensor:
+                return self.lstm(x)[0]
+        return backbone()
 
     def configure_head(self, hidden_size, input_size) -> nn.Module:
         return LinearHead(in_features=hidden_size, out_features=input_size)

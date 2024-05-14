@@ -7,7 +7,6 @@ from lightning.pytorch.callbacks import (
     RichModelSummary,
     RichProgressBar,
 )
-
 from rich import print
 
 __all__ = [
@@ -45,23 +44,22 @@ class LaunchTensorboard(L.Callback):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         ) as proc:
-            print(
-                f"""
-            =======================================
-            =        Tensorboard Activated.       =
-            =======================================
-            Open http://localhost:6006/ to view the training process.
-            tensorboard PID: {proc.pid}
-                        """
-            )
+            msg = f"""
+=======================================
+=        Tensorboard Activated.       =
+=======================================
+Open http://localhost:6006/ to view the training process.
+tensorboard PID: {proc.pid}
+"""
+            print(msg)
             self.proc = proc
         return super().on_train_start(trainer, pl_module)
 
     def on_train_end(self, trainer, pl_module) -> None:
         if self.proc:
-            self.proc.terminate()
-        else:
-            pass
+            print(
+                f'kill the tensorboard with "kill {self.proc.pid}" if you dont need it.'
+            )
         return
 
 
@@ -167,13 +165,13 @@ class LoadCheckpoint(L.Callback):
 
         best_model_path, best_val_loss, best_val_loss_epoch = ckpt_info
         msg = f"""
-            Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
-            Checkpoint saved at {best_model_path}
-            Best Model Loaded from Checkpoint.        
-            =======================================
-            =          Training Finished.         =
-            =======================================
-            """
+Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
+Checkpoint saved at: {best_model_path}
+Best Model Loaded from Checkpoint.        
+=======================================
+=          Training Finished.         =
+=======================================
+"""
         print(msg)
 
         return

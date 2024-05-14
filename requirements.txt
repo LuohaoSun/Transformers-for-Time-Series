@@ -5,6 +5,7 @@ lightning>=2.0.0
 torchmetrics>=0.11.4
 
 # --------- loggers --------- #
+tensorboard
 # wandb
 # neptune
 # mlflow
@@ -16,13 +17,11 @@ torchmetrics>=0.11.4
 # scikit-learn
 # xgboost
 
-# --------- others --------- #
-rootutils       # standardizing the project root setup
-pre-commit      # hooks for applying linters on commit
+# --------- others ---------- #
 rich            # beautiful text formatting in terminal
 pytest          # tests
 # sh              # for running bash commands in some tests (linux/macos only)
 matplotlib      # for plotting
-numpy==1.26.4
-pandas==2.2.1
+numpy
+pandas
 ipywidgets      # for rich interactive visualizations in notebooks
