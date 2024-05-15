@@ -13,7 +13,7 @@ def main():
     in_seq_len = datamodule.shape[1]  # 4096
 
     # Step 2. Choose a model (AutoEncodingFramework from models.autoencoding_models)
-    from Module.models.autoencoding_models import AutoEncoder
+    from model.autoencoding_models.autoencoding_models import AutoEncoder
 
     model = AutoEncoder(
         encoder_in_seq_len=in_seq_len,

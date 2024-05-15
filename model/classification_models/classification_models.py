@@ -3,9 +3,9 @@ import torch
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch import Tensor
 from framework import ClassificationFramework
-from Module.components.activations import get_activation_fn
-from Module.backbones.patchtst import PatchTSTEncoder
-from Module.heads.classification_heads import *
+from ..components.activations import get_activation_fn
+from ..backbones.patchtst import PatchTSTEncoder
+from model.classification_models.classification_heads import *
 
 
 class CustomClassificationModel(ClassificationFramework):

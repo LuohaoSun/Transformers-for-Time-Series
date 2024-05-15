@@ -25,42 +25,74 @@ def get_default_callbacks() -> list[L.Callback]:
         RichModelSummary(max_depth=-1),
         RichProgressBar(),
         # framework default callbacks
-        LaunchTensorboard(),
         LogHyperparams(),
         LogLoss(),
         LoadCheckpoint(),
+        LaunchTensorboard(),
     ]
+
+
+class PrintTrainingMsg(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def on_train_start(self, trainer, pl_module) -> None:
+        msg = f"""
+=======================================
+=          Training Started.          =
+=======================================
+"""
+        print(msg)
+        return super().on_train_start(trainer, pl_module)
+
+    def on_train_end(self, trainer, pl_module) -> None:
+        msg = f"""
+=======================================
+=          Training Finished.         =
+=======================================
+"""
+        print(msg)
+        return super().on_train_end(trainer, pl_module)
 
 
 class LaunchTensorboard(L.Callback):
     def __init__(self) -> None:
         super().__init__()
-        self.proc: subprocess.Popen | None = None
+        self.proc: subprocess.Popen
         pass
 
     def on_train_start(self, trainer, pl_module) -> None:
-        with subprocess.Popen(
+        self.proc = subprocess.Popen(
             ["tensorboard", "--logdir=lightning_logs"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-        ) as proc:
-            msg = f"""
+        )
+        msg = f"""
 =======================================
 =        Tensorboard Activated.       =
 =======================================
 Open http://localhost:6006/ to view the training process.
-tensorboard PID: {proc.pid}
+tensorboard PID: {self.proc.pid}
 """
-            print(msg)
-            self.proc = proc
+        print(msg)
         return super().on_train_start(trainer, pl_module)
 
     def on_train_end(self, trainer, pl_module) -> None:
-        if self.proc:
-            print(
-                f'kill the tensorboard with "kill {self.proc.pid}" if you dont need it.'
-            )
-        return
+        kill_proc = True if input("Kill tensorboard? ([[Y]]/n): ") != "n" else False
+        if kill_proc:
+            self.proc.kill()
+            msg = f"""
+=======================================
+=      Tensorboard Dectivated.        =
+=======================================
+"""
+        else:
+            msg = f"""
+kill the tensorboard with
+kill {self.proc.pid}
+if you dont need it.
+"""
+        return print(msg)
 
 
 class LogHyperparams(L.Callback):
@@ -70,12 +102,12 @@ class LogHyperparams(L.Callback):
     def on_train_start(self, trainer, pl_module) -> None:
         trainer.logger.log_hyperparams(pl_module.hparams)  # type: ignore
         msg = f"""
+=======================================
+=       Hyperparameters Logged.       =
+=======================================
 Hyperparameters:
 {pl_module.hparams}
-=======================================
-=          Training Started.          =
-=======================================
-"""
+"""  # TODO: move to msg callback
         print(msg)
         return super().on_train_start(trainer, pl_module)
 
@@ -165,12 +197,11 @@ class LoadCheckpoint(L.Callback):
 
         best_model_path, best_val_loss, best_val_loss_epoch = ckpt_info
         msg = f"""
+=======================================
+=        Checkpoint Loaded.          =
+=======================================
 Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
 Checkpoint saved at: {best_model_path}
-Best Model Loaded from Checkpoint.        
-=======================================
-=          Training Finished.         =
-=======================================
 """
         print(msg)
 

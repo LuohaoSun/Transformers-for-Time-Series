@@ -1,11 +1,60 @@
 from typing import Callable, Tuple
-from requests import head
 from torch import Tensor
-from torch.nn.modules import Module
 from framework.autoencoding.autoencoding_framework import AutoEncodingFramework
-from Module.backbones import patchtst, mlp
-from Module.heads import autoencoding_heads
-from Module.components.activations import get_activation_fn
+from ..backbones import patchtst, mlp
+from model.autoencoding_models import autoencoding_heads
+from ..components.activations import get_activation_fn
+from functools import partial
+
+
+def Auto_encoder(
+    self,
+    # model params
+    encoder_in_seq_len: int,
+    encoder_hidden_len: tuple[int, ...],
+    encoder_out_seq_len: int,
+    activation: str | Callable[[Tensor], Tensor],
+    # logging params
+    every_n_epochs: int,
+    figsize: Tuple[int, int],
+    dpi: int,
+    # training params
+    lr: float,
+    max_epochs: int,
+    max_steps: int = -1,
+    mask_ratio: float = 0,
+    mask_length: int = 1,
+    loss_type: str = "full",  # 'full', 'masked', 'hybrid'
+) -> AutoEncodingFramework:
+    backbone = mlp.MLPBackbone(
+        in_seq_len=encoder_in_seq_len,
+        hidden_len=encoder_hidden_len,
+        out_seq_len=encoder_out_seq_len,
+        activation=activation,
+    )
+    head = mlp.MLPBackbone(
+        in_seq_len=encoder_out_seq_len,
+        hidden_len=encoder_hidden_len[::-1],
+        out_seq_len=encoder_in_seq_len,
+        activation=activation,
+    )
+    model = AutoEncodingFramework(
+        # model params
+        backbone=backbone,
+        head=head,
+        # logging params
+        every_n_epochs=every_n_epochs,
+        figsize=figsize,
+        dpi=dpi,
+        # training params
+        lr=lr,
+        max_epochs=max_epochs,
+        max_steps=max_steps,
+        mask_ratio=mask_ratio,
+        mask_length=mask_length,
+        loss_type=loss_type,
+    )
+    return model
 
 
 class AutoEncoder(AutoEncodingFramework):

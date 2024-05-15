@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from framework.forecasting.forecasting_framework import ForecastingFramework
-from Module.components.token_embedding import *
-from Module.heads.forecasting_heads import *
+from ..components.token_embedding import *
+from model.forecasting_model.forecasting_heads import *
 
 
 class LSTM(ForecastingFramework):

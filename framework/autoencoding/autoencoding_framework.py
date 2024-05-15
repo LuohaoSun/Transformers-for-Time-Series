@@ -8,7 +8,6 @@ import torch
 from typing import Mapping, Iterable, Tuple
 from torch import Tensor
 
-from abc import ABC, abstractmethod
 from ..framework_base.framework_base import FrameworkBase
 from .autoencoding_callbacks import ViAndLog2Tensorboard
 
@@ -103,13 +102,12 @@ class MaskedLoss(L.LightningModule):
         return full_weight * full_loss + masked_weight * masked_loss
 
 
-class AutoEncodingFramework(FrameworkBase, ABC):
+class AutoEncodingFramework(FrameworkBase):
     """
     用于时间序列随机遮蔽重构任务的基础模型类，
     针对性地实现了损失、训练、验证、预测、可视化等，且forward方法已经在父类中实现。
     """
 
-    @abstractmethod
     def __init__(
         self,
         # model params

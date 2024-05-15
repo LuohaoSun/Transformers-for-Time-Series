@@ -18,11 +18,11 @@ class ViAndLog2Tensorboard(L.Callback):
     def __init__(
         self,
         every_n_epochs: int = 20,
-        figsize: tuple[int, int] = (10, 5),
+        fig_size: tuple[int, int] = (4, 2),
         dpi: int = 300,
     ) -> None:
         self.every_n_epochs = every_n_epochs
-        self.figsize = figsize
+        self.figsize = fig_size
         self.dpi = dpi
 
     def __call__(
@@ -44,7 +44,7 @@ class ViAndLog2Tensorboard(L.Callback):
 
         def get_image_names(series_names: list[str]) -> list[str]:
             return [
-                f"{series_name}-Epoch{trainer.current_epoch}"
+                f"{series_name}_epoch_{trainer.current_epoch}"
                 for series_name in series_names
             ]
 
@@ -84,7 +84,7 @@ class ViAndLog2Tensorboard(L.Callback):
         only first nodes are plotted when the series has a third dimension.
         returns the figure path
         """
-        plt.figure(figsize=self.figsize, dpi=self.dpi)  # FIXME: hard coded figure size
+        plt.figure(figsize=self.figsize, dpi=self.dpi)
         if isinstance(series, dict):
             for series_name, series_values in series.items():
                 self.sub_plot(series_values, series_name)

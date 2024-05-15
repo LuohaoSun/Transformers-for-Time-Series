@@ -6,12 +6,11 @@ import torch.nn as nn
 import numpy as np
 from typing import Mapping, Iterable
 from torch import Tensor
-from abc import ABC, abstractmethod
 from ..framework_base.framework_base import FrameworkBase
 from .classification_callbacks import ComputeAndLogMetrics2Tensorboard
 
 
-class ClassificationFramework(FrameworkBase, ABC):
+class ClassificationFramework(FrameworkBase):
 
     def __init__(
         self,

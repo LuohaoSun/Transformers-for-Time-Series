@@ -22,6 +22,7 @@ class ForecastingDataModule(L.LightningDataModule):
         batch_size: int,
         train_val_test_split: Tuple[float, float, float] = (0.6, 0.2, 0.2),
         num_workers: int = 0,
+        normalization: str = "01",  # 01, zscore, minmax, none
     ) -> None:
         super().__init__()
         self.file_path = csv_file_path
@@ -31,6 +32,7 @@ class ForecastingDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.train_val_test_split = train_val_test_split
         self.num_workers = num_workers
+        self.normalization = normalization
 
     @property
     def num_features(self):
@@ -43,7 +45,18 @@ class ForecastingDataModule(L.LightningDataModule):
         # download, IO, etc. Useful with shared filesystems
         # only called on 1 GPU/TPU in distributed
         self.csv_data = pd.read_csv(self.file_path)
-
+        if self.normalization == "01":
+            self.csv_data = (self.csv_data - self.csv_data.min()) / (
+                self.csv_data.max() - self.csv_data.min()
+            )
+        elif self.normalization == "zscore":
+            self.csv_data = (self.csv_data - self.csv_data.mean()) / self.csv_data.std()
+        elif self.normalization == "minmax":
+            self.csv_data = (self.csv_data - self.csv_data.min()) / (
+                self.csv_data.max() - self.csv_data.min()
+            )
+        else:
+            pass
         return
 
     def setup(self, stage: str | None = None):
