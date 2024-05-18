@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from torch import Tensor
-from Module.components.activations import get_activation_fn
+from ..components.activations import get_activation_fn
 
 """
 For a higher-performance, use other more advanced backbones as the head.

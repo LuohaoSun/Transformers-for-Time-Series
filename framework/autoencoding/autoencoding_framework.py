@@ -13,7 +13,7 @@ from .autoencoding_callbacks import ViAndLog2Tensorboard
 
 
 class RandomMask(L.LightningModule):
-    def __init__(self, mask_ratio, mask_length) -> None:
+    def __init__(self, mask_ratio, mask_length=1) -> None:
         """
         mask the input tensor and store the mask in property.
         mask_ratio (float) [0, 1): The ratio of masked tokens in the input sequence.

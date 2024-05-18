@@ -18,6 +18,11 @@ from typing import Mapping, Iterable
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
 
+__all__ = [
+    "ComputeAndLogMetrics2Tensorboard",
+    "ViAndLog2Tensorboard",
+]
+
 
 class ComputeAndLogMetrics2Tensorboard(L.Callback):
     # TODO: add more metrics

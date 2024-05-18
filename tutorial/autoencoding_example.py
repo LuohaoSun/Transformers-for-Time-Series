@@ -1,4 +1,8 @@
 # Description: An example of how to use the AutoEncodingFramework
+import sys
+
+sys.path.append("./")
+from utils.visualization import SeriesPlotter
 
 
 def main():
@@ -10,23 +14,30 @@ def main():
     )
 
     datamodule = FaultPredictionDataModule(batch_size=40)
-    in_seq_len = datamodule.shape[1]  # 4096
 
     # Step 2. Choose a model (AutoEncodingFramework from models.autoencoding_models)
-    from model.autoencoding_models.autoencoding_models import AutoEncoder
+    from model.autoencoding_models.autoencoding_models import PatchTSTAutoEncodingModel
 
-    model = AutoEncoder(
-        encoder_in_seq_len=in_seq_len,
-        encoder_hidden_len=(2048, 1024, 512, 256),
-        encoder_out_seq_len=64,
-        activation="gelu",
+    model = PatchTSTAutoEncodingModel(
+        in_features=1,
+        d_model=32,
+        patch_size=16,
+        patch_stride=16,
+        num_layers=2,
+        dropout=0,
+        nhead=2,
+        activation="relu",
+        additional_tokens_at_last=0,
+        norm_first=True,
         # logging params
         every_n_epochs=10,
-        figsize=(15, 15),
+        figsize=(30, 5),
         dpi=300,
         # training params
-        lr=1e-3,
-        max_epochs=100,
+        mask_ratio=0,
+        lr=1e-5,
+        max_epochs=11,
+        max_steps=-1,
     )
 
     # Step 3. model trains itself with the datamodule
@@ -38,6 +49,7 @@ def main():
 
     encoded = model.encode(sample_data)  # same as model.backbone(sample_data)
     decoded = model.decode(encoded)  # same as model.head(encoded)
+    SeriesPlotter.plot_and_show([sample_data, decoded], figsize=(30, 2))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import lightning as L
 import subprocess
+import yaml
 from typing import Mapping
 from torch import Tensor
 from lightning.pytorch.callbacks import (
@@ -8,6 +9,9 @@ from lightning.pytorch.callbacks import (
     RichProgressBar,
 )
 from rich import print
+from torch.utils.tensorboard.writer import SummaryWriter
+from lightning.pytorch.loggers import TensorBoardLogger
+
 
 __all__ = [
     "get_default_callbacks",
@@ -25,6 +29,7 @@ def get_default_callbacks() -> list[L.Callback]:
         RichModelSummary(max_depth=-1),
         RichProgressBar(),
         # framework default callbacks
+        LogGraph(),
         LogHyperparams(),
         LogLoss(),
         LoadCheckpoint(),
@@ -78,9 +83,9 @@ tensorboard PID: {self.proc.pid}
         return super().on_train_start(trainer, pl_module)
 
     def on_train_end(self, trainer, pl_module) -> None:
-        kill_proc = True if input("Kill tensorboard? ([[Y]]/n): ") != "n" else False
+        kill_proc = True if input("Terminate tensorboard? ([Y]/n): ") != "n" else False
         if kill_proc:
-            self.proc.kill()
+            self.proc.terminate()
             msg = f"""
 =======================================
 =      Tensorboard Dectivated.        =
@@ -95,19 +100,51 @@ if you dont need it.
         return print(msg)
 
 
+class LogGraph(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def on_validation_batch_end(
+        self,
+        trainer: L.Trainer,
+        pl_module: L.LightningModule,
+        outputs: Mapping[str, Tensor],
+        batch: Tensor,
+        batch_idx: int,
+        dataloader_idx: int = 0,
+    ) -> None:
+        if trainer.current_epoch == 0 and batch_idx == 0:
+            tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
+            tb_writer.add_graph(pl_module, batch[0])
+
+        return super().on_validation_batch_end(
+            trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+        )
+
+
 class LogHyperparams(L.Callback):
     def __init__(self) -> None:
         super().__init__()
 
-    def on_train_start(self, trainer, pl_module) -> None:
-        trainer.logger.log_hyperparams(pl_module.hparams)  # type: ignore
+    def on_train_end(self, trainer, pl_module) -> None:
+        checkpoint_callback: ModelCheckpoint = trainer.checkpoint_callback  # type: ignore
+        best_val_loss = float(checkpoint_callback.best_model_score.item())  # type: ignore
+        # tb_logger: TensorBoardLogger = trainer.logger  # type: ignore
+        tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
+        # hparam_path = tb_logger.log_dir + "/hparams.yaml"
+        hparam_dict = {k: str(v) for k, v in pl_module.hparams.items()}
+        
+        # tb_logger.log_hyperparams(hparam_dict, {"best_val_loss": best_val_loss})
+        tb_writer.add_hparams(hparam_dict, {"best_val_loss": best_val_loss},global_step=0)
+        # with open(hparam_path, "w") as file:
+        #     yaml.dump(pl_module.hparams, file)
         msg = f"""
 =======================================
 =       Hyperparameters Logged.       =
 =======================================
-Hyperparameters:
-{pl_module.hparams}
-"""  # TODO: move to msg callback
+Hyperparameters:\n{pl_module.hparams}
+Best validation loss: {best_val_loss}
+"""
         print(msg)
         return super().on_train_start(trainer, pl_module)
 

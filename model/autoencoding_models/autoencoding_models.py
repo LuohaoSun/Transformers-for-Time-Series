@@ -1,63 +1,11 @@
 from typing import Callable, Tuple
-from torch import Tensor
+from torch import Tensor, nn
 from framework.autoencoding.autoencoding_framework import AutoEncodingFramework
 from ..backbones import patchtst, mlp
 from model.autoencoding_models import autoencoding_heads
 from ..components.activations import get_activation_fn
-from functools import partial
 
-
-def Auto_encoder(
-    self,
-    # model params
-    encoder_in_seq_len: int,
-    encoder_hidden_len: tuple[int, ...],
-    encoder_out_seq_len: int,
-    activation: str | Callable[[Tensor], Tensor],
-    # logging params
-    every_n_epochs: int,
-    figsize: Tuple[int, int],
-    dpi: int,
-    # training params
-    lr: float,
-    max_epochs: int,
-    max_steps: int = -1,
-    mask_ratio: float = 0,
-    mask_length: int = 1,
-    loss_type: str = "full",  # 'full', 'masked', 'hybrid'
-) -> AutoEncodingFramework:
-    backbone = mlp.MLPBackbone(
-        in_seq_len=encoder_in_seq_len,
-        hidden_len=encoder_hidden_len,
-        out_seq_len=encoder_out_seq_len,
-        activation=activation,
-    )
-    head = mlp.MLPBackbone(
-        in_seq_len=encoder_out_seq_len,
-        hidden_len=encoder_hidden_len[::-1],
-        out_seq_len=encoder_in_seq_len,
-        activation=activation,
-    )
-    model = AutoEncodingFramework(
-        # model params
-        backbone=backbone,
-        head=head,
-        # logging params
-        every_n_epochs=every_n_epochs,
-        figsize=figsize,
-        dpi=dpi,
-        # training params
-        lr=lr,
-        max_epochs=max_epochs,
-        max_steps=max_steps,
-        mask_ratio=mask_ratio,
-        mask_length=mask_length,
-        loss_type=loss_type,
-    )
-    return model
-
-
-class AutoEncoder(AutoEncodingFramework):
+class MLPAutoEncoder(AutoEncodingFramework):
     def __init__(
         self,
         # model params
@@ -127,6 +75,7 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
         dropout: float,
         nhead: int,
         activation: str | Callable[[Tensor], Tensor],
+        additional_tokens_at_last: int,
         norm_first: bool,
         # logging params
         every_n_epochs: int,
@@ -137,8 +86,8 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
         max_epochs: int,
         max_steps: int,
         mask_ratio: float,
-        mask_length: int,
-        loss_type: str = "hybrid",  # 'full', 'masked', 'hybrid'
+        mask_length: int = 1,
+        loss_type: str = "full",  # 'full', 'masked', 'hybrid'
     ) -> None:
         """
         Args:
@@ -173,9 +122,10 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
             dropout,
             nhead,
             activation,
+            additional_tokens_at_last,
             norm_first,
         )
-        head = autoencoding_heads.MLPHead(d_model, d_model * 4, in_features, activation)
+        head = self.MLPDecoder(d_model, patch_stride, in_features, activation)
 
         super().__init__(
             backbone=backbone,
@@ -192,3 +142,27 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
             mask_length=mask_length,
             loss_type=loss_type,
         )
+
+    class MLPDecoder(nn.Module):
+        """
+        decode a (batch_size, in_seq_len//patch_stride, d_model) tensor to a (batch_size, in_seq_len, in_features) tensor
+        """
+
+        def __init__(self, d_model, patch_stride, in_features, activation):
+            super().__init__()
+            self.in_features = in_features
+            self.decoder = nn.Sequential(
+                nn.Linear(d_model, patch_stride * in_features * 4),
+                get_activation_fn(activation),
+                nn.Linear(
+                    patch_stride * in_features * 4,
+                    patch_stride * in_features,
+                ),
+            )
+
+        def forward(self, x: Tensor) -> Tensor:
+            # (b, l//s, d) -> (b, l//s, s*d_in):
+            x = self.decoder(x)
+            # (b, l//s, s*d_in) -> (b, l, d_in):
+            x = x.view(x.size(0), -1, self.in_features)
+            return x

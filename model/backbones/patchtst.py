@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import lightning as L
-from Module.components import positional_embedding as PE
-from Module.components import token_embedding as TE
+from ..components import positional_embedding as PE
+from ..components import token_embedding as TE
 from torch import Tensor
 from typing import Any, Dict, Iterable, Mapping, Union, Callable
-from Module.components.activations import get_activation_fn
+
 
 
 class PatchTSTEncoder(nn.Module):
@@ -137,7 +136,7 @@ class PatchTSTBackbone(L.LightningModule):
         self.atal = additional_tokens_at_last
         if additional_tokens_at_last > 0:
             self.additional_tokens = nn.Parameter(
-                torch.randn(additional_tokens_at_last, d_model)
+                torch.randn((additional_tokens_at_last, d_model))
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -145,12 +144,12 @@ class PatchTSTBackbone(L.LightningModule):
         x: Tensor with shape (batch_size, steps, in_features)
         returns: Tensor with shape (batch_size, steps//patch_stride + atal, d_model)
         """
-        x = self.token_emb(x.permute(0, 2, 1))
+        x = self.token_emb(x)
         if self.atal > 0:
             x = torch.cat(
                 [x, self.additional_tokens[None, :, :].repeat(x.shape[0], 1, 1)], dim=1
             )
-        x = self.pos_emb(x.permute(0, 2, 1))
+        x = self.pos_emb(x)
         x = self.transformer_encoder(x)
 
         return x

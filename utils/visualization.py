@@ -17,12 +17,24 @@ class SeriesPlotter:
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
         figsize=(10, 6),
-    ):
-        img = cls.plot_series(series, figsize)
-        img.show()
+    ) -> Figure:
+        img = cls._plot_series(series, figsize)
+        plt.show()
+        # plt.close()
+        return img
 
     @classmethod
     def plot_series(
+        cls,
+        series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
+        figsize=(10, 6),
+    ) -> Figure:
+        img = cls._plot_series(series, figsize)
+        plt.close()
+        return img
+
+    @classmethod
+    def _plot_series(
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
         figsize=(10, 6),
@@ -40,21 +52,22 @@ class SeriesPlotter:
 
         if isinstance(series, dict):
             for series_name, series_values in series.items():
-                cls.sub_plot(series_values, series_name)
+                cls._sub_plot(series_values, series_name)
         elif isinstance(series, list):
             for series_values in series:
-                cls.sub_plot(series_values)
+                cls._sub_plot(series_values)
         else:
-            cls.sub_plot(series)
+            cls._sub_plot(series)
 
         plt.xlabel("Time steps")
         plt.ylabel("Value")
+        plt.legend()
         img = plt.gcf()
         plt.close()
         return img
 
-    @classmethod
-    def sub_plot(cls, series: Tensor, series_name: str = "Series"):
+    @staticmethod
+    def _sub_plot(series: Tensor, series_name: str = "Series"):
         """
         Plots a single series.
 
