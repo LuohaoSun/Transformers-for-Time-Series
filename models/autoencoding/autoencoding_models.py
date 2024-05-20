@@ -2,7 +2,7 @@ from typing import Callable, Tuple
 from torch import Tensor, nn
 from framework.autoencoding.autoencoding_framework import AutoEncodingFramework
 from ..backbones import patchtst, mlp
-from model.autoencoding_models import autoencoding_heads
+from models.autoencoding import autoencoding_heads
 from ..components.activations import get_activation_fn
 
 class MLPAutoEncoder(AutoEncodingFramework):

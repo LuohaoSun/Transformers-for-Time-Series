@@ -77,7 +77,6 @@ class FrameworkBase(L.LightningModule, ABC):
             accelerator="auto",
         )
 
-
     @abstractmethod
     def loss(self, output: Tensor, target: Tensor) -> Tensor:
         """
@@ -172,6 +171,15 @@ class FrameworkBase(L.LightningModule, ABC):
         """
         self.framework_trainer.fit(self, datamodule)
 
+    def train(self, datamodule: L.LightningDataModule) -> None:
+        """
+        Same as fit. Trains the model using the provided LightningDataModule.
+
+        Args:
+            datamodule (L.LightningDataModule): The LightningDataModule for training.
+        """
+        return self.fit(datamodule)
+
     def test(self, datamodule: L.LightningDataModule) -> None:
         """
         Tests the model using the provided LightningDataModule.
@@ -198,3 +206,7 @@ class FrameworkBase(L.LightningModule, ABC):
             datamodule (L.LightningDataModule): The LightningDataModule for testing.
         """
         return self.test(datamodule)
+
+    def load_checkpoint(self, ckpt_path: str):
+        self = self.__class__.load_from_checkpoint(checkpoint_path=ckpt_path)
+        return self

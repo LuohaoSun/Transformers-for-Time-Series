@@ -5,7 +5,7 @@ import torch.nn as nn
 from typing import Mapping, Iterable
 from torch import Tensor
 from ..framework_base.framework_base import FrameworkBase
-from .forecasting_callbacks import ComputeAndLogMetrics2Tensorboard
+from .forecasting_callbacks import ComputeMetricsAndLog
 from ..autoencoding.autoencoding_callbacks import ViAndLog2Tensorboard
 
 
@@ -29,18 +29,16 @@ class ForecastingFramework(FrameworkBase):
         # logging params
         evry_n_epochs: int = 20,
         fig_size: tuple[int, int] = (10, 5),
-        dpi: int = 300,
     ) -> None:
 
         super().__init__(
             backbone=backbone,
             head=head,
             additional_callbacks=[
-                ComputeAndLogMetrics2Tensorboard(),
+                ComputeMetricsAndLog(),
                 ViAndLog2Tensorboard(
                     every_n_epochs=evry_n_epochs,
                     fig_size=fig_size,
-                    dpi=dpi,
                 ),  # 把autoencoding的callback借过来
             ],
             lr=lr,

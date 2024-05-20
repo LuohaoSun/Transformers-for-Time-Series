@@ -1,3 +1,4 @@
+from matplotlib import colors
 import numpy as np
 from torch import Tensor
 from typing import Union, List, Dict
@@ -28,7 +29,23 @@ class SeriesPlotter:
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
         figsize=(10, 6),
+        line_styles: List[str] | None = None,
+        markers: List[str] | None = None,  # could be
+        colors: List[str] | None = None,
     ) -> Figure:
+        """
+        Plots the series.
+
+        Args:
+            series: The series to plot. It can be a single tensor, a list of tensors, or a dictionary of tensors.
+            figsize: (width, height)
+            line_styles: Could be "-", "--", "-.", ":"
+            markers: Could be
+            colors:
+
+        Returns:
+            The matplotlib figure object.
+        """
         img = cls._plot_series(series, figsize)
         plt.close()
         return img
@@ -39,15 +56,7 @@ class SeriesPlotter:
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
         figsize=(10, 6),
     ) -> Figure:
-        """
-        Plots the series.
 
-        Args:
-            series: The series to plot. It can be a single tensor, a list of tensors, or a dictionary of tensors.
-
-        Returns:
-            The matplotlib figure object.
-        """
         plt.figure(figsize=figsize, dpi=300)
 
         if isinstance(series, dict):

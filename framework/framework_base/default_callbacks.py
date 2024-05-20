@@ -26,7 +26,7 @@ def get_default_callbacks() -> list[L.Callback]:
     return [
         # lightning built-in callbacks
         ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
-        RichModelSummary(max_depth=-1),
+        RichModelSummary(max_depth=3),
         RichProgressBar(),
         # framework default callbacks
         LogGraph(),
@@ -129,24 +129,33 @@ class LogHyperparams(L.Callback):
     def on_train_end(self, trainer, pl_module) -> None:
         checkpoint_callback: ModelCheckpoint = trainer.checkpoint_callback  # type: ignore
         best_val_loss = float(checkpoint_callback.best_model_score.item())  # type: ignore
-        # tb_logger: TensorBoardLogger = trainer.logger  # type: ignore
-        tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
-        # hparam_path = tb_logger.log_dir + "/hparams.yaml"
-        hparam_dict = {k: str(v) for k, v in pl_module.hparams.items()}
-        
-        # tb_logger.log_hyperparams(hparam_dict, {"best_val_loss": best_val_loss})
-        tb_writer.add_hparams(hparam_dict, {"best_val_loss": best_val_loss},global_step=0)
-        # with open(hparam_path, "w") as file:
-        #     yaml.dump(pl_module.hparams, file)
+        tb_logger: TensorBoardLogger = trainer.logger  # type: ignore
+        # hparam_dict = {k: str(v) for k, v in pl_module.hparams.items()}
+        if len(pl_module.hparams) == 0:
+            self.no_hyperparameters_found()
+        else:
+            self.hyperparameters_logged(tb_logger, pl_module.hparams, best_val_loss)
+        return super().on_train_end(trainer, pl_module)
+
+    def no_hyperparameters_found(self):
+        msg = f"""
+=======================================
+=       No Hyperparameters Found.     =
+=======================================
+Use `self.save_hyperparameters()` in the __init__() method of your model to log hyperparameters.
+"""
+        print(msg)
+
+    def hyperparameters_logged(self, logger, hparam_dict, best_val_loss):
+        logger.log_hyperparams(hparam_dict, {"Best Validation Loss": best_val_loss})
         msg = f"""
 =======================================
 =       Hyperparameters Logged.       =
 =======================================
-Hyperparameters:\n{pl_module.hparams}
+Hyperparameters:\n{hparam_dict}
 Best validation loss: {best_val_loss}
 """
         print(msg)
-        return super().on_train_start(trainer, pl_module)
 
 
 class LogLoss(L.Callback):

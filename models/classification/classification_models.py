@@ -5,7 +5,7 @@ from torch import Tensor
 from framework import ClassificationFramework
 from ..components.activations import get_activation_fn
 from ..backbones.patchtst import PatchTSTEncoder
-from model.classification_models.classification_heads import *
+from models.classification.classification_heads import *
 
 
 class CustomClassificationModel(ClassificationFramework):

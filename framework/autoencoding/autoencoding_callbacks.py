@@ -19,11 +19,9 @@ class ViAndLog2Tensorboard(L.Callback):
         self,
         every_n_epochs: int = 20,
         fig_size: tuple[int, int] = (4, 2),
-        dpi: int = 300,
     ) -> None:
         self.every_n_epochs = every_n_epochs
         self.figsize = fig_size
-        self.dpi = dpi
 
     def __call__(
         self,
@@ -84,7 +82,7 @@ class ViAndLog2Tensorboard(L.Callback):
         only first nodes are plotted when the series has a third dimension.
         returns the figure path
         """
-        plt.figure(figsize=self.figsize, dpi=self.dpi)
+        plt.figure(figsize=self.figsize, dpi=300)
         if isinstance(series, dict):
             for series_name, series_values in series.items():
                 self.sub_plot(series_values, series_name)

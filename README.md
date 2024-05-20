@@ -23,21 +23,7 @@ The framework is built to be adaptable to your unique requirements. Integrate yo
 Here's a quick overview of the project layout:
 
 ```
-/
-└── Repo/
-    ├── data/                  # Directory for datasets
-    ├── logs/                 # Directory for storing logs
-    │
-    ├── Modules/              # Core modules of the framework
-    │   ├── components/       # Various components
-    │   │   ├── activations.py # Activation functions
-    │   |   ├── framework.py    # Framework specific modules
-    │   │   └── ...            # More components
-    │   │
-    │   └── classification.py # Time series classification models
-    │   └── ...                # Other tasks
-    │
-    └── main.py               # Main entry point of the application
+
 ```
 
 ## Getting Started

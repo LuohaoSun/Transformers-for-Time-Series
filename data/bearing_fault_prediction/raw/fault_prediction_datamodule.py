@@ -69,7 +69,7 @@ class FaultPredictionDataModule(LightningDataModule):
             self.batch_size_per_device = self.batch_size
 
         if not hasattr(self, "data_train"):
-            self.data_train, self.data_val, self.data_test = self.prepare_datasets()
+            self.train_dataset, self.val_dataset, self.test_dataset = self.prepare_datasets()
 
     def prepare_datasets(self):
         print("Preparing datasets...")
@@ -98,7 +98,7 @@ class FaultPredictionDataModule(LightningDataModule):
 
     def train_dataloader(self) -> DataLoader[Any]:
         return DataLoader(
-            dataset=self.data_train,
+            dataset=self.train_dataset,
             batch_size=self.batch_size_per_device,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
@@ -108,7 +108,7 @@ class FaultPredictionDataModule(LightningDataModule):
 
     def val_dataloader(self) -> DataLoader[Any]:
         return DataLoader(
-            dataset=self.data_val,
+            dataset=self.val_dataset,
             batch_size=self.batch_size_per_device,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
@@ -118,7 +118,7 @@ class FaultPredictionDataModule(LightningDataModule):
 
     def test_dataloader(self) -> DataLoader:
         return DataLoader(
-            dataset=self.data_test,
+            dataset=self.test_dataset,
             batch_size=self.batch_size_per_device,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,

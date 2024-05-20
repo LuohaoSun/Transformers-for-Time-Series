@@ -1,9 +1,7 @@
 # Description: An example of how to use the AutoEncodingFramework
 import sys
-
 sys.path.append("./")
 from utils.visualization import SeriesPlotter
-
 
 def main():
     import torch
@@ -16,27 +14,27 @@ def main():
     datamodule = FaultPredictionDataModule(batch_size=40)
 
     # Step 2. Choose a model (AutoEncodingFramework from models.autoencoding_models)
-    from model.autoencoding_models.autoencoding_models import PatchTSTAutoEncodingModel
+    from models.autoencoding.autoencoding_models import PatchTSTAutoEncodingModel
 
     model = PatchTSTAutoEncodingModel(
         in_features=1,
         d_model=32,
-        patch_size=16,
-        patch_stride=16,
-        num_layers=2,
-        dropout=0,
-        nhead=2,
+        patch_size=32,
+        patch_stride=32,
+        num_layers=1,
+        dropout=0.2,
+        nhead=1,
         activation="relu",
         additional_tokens_at_last=0,
         norm_first=True,
         # logging params
-        every_n_epochs=10,
+        every_n_epochs=2,
         figsize=(30, 5),
         dpi=300,
         # training params
         mask_ratio=0,
-        lr=1e-5,
-        max_epochs=11,
+        lr=1e-3,
+        max_epochs=3,
         max_steps=-1,
     )
 
