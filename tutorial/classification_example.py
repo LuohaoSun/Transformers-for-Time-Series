@@ -1,60 +1,44 @@
-"""
-a .py version of the notebook example.ipynb
-"""
+import torch
+from torch import nn
+import sys
+
+sys.path.append("./")
 
 
 def main():
-    import torch
+    # 第1步：根据数据集创建datamodule。此处你需要指定数据集的参数，例如batch_size、子集划分等。
+    from data.bearing_fault_prediction.datamodule import FaultPredictionDataModule
 
-    # Step 1. Choose a dataset (L.LightningDataModule)
-    from data.bearing_fault_prediction.raw.fault_prediction_datamodule import (
-        FaultPredictionDataModule,
+    datamodule = FaultPredictionDataModule(
+        train_val_test_split=(2800, 400, 800), batch_size=40, num_workers=4
     )
 
-    data_module = FaultPredictionDataModule()
+    # 第2步：根据喜好选择骨干模型。此处你需要指定模型超参数，例如d_model、num_layers等。
+    from backbones import patchtst
 
-    # Step 2. Choose a model (ClassificationFramework from models.classification_models)
-    from model.classification_models.classification_models import SimpleConv1dClassificationModel
-
-    model = SimpleConv1dClassificationModel(
+    backbone = patchtst.PatchTSTBackbone(
         in_features=1,
-        num_classes=4,
-        hidden_features=512,
-        kernel_size=16,
-        stride=8,
-        padding=0,
-        pool_size=8,
-        activation="softplus",
-        lr=1e-3,
-        max_epochs=10,
+        d_model=64,
+        patch_size=16,
+        patch_stride=16,
+        num_layers=2,
     )
 
-    # for a higher resolution model, use the following model
-    # from Modules.models.classification_models import PatchTSTClassificationModel
-    # model = PatchTSTClassificationModel(
-    #     in_features=1,
-    #     d_model=64,
-    #     num_classes=4,
-    #     patch_size=64,
-    #     patch_stride=32,
-    #     dropout=0.1,
-    #     nhead=2,
-    #     num_layers=2,
-    #     norm_first=True,
-    #     activation='gelu',
+    # 第3步：根据任务选择framework。此处你需要指定任务参数，例如out_seq_len、num_classes等。
+    from framework.classification.classification_framework import (
+        ClassificationFramework,
+    )
 
-    #     lr=1e-3,
-    #     max_epochs=50,
+    framework = ClassificationFramework(
+        backbone=backbone,
+        hidden_features=64,
+        out_seq_len=1,
+        num_classes=4,
+    )
 
-    # )
-
-    # Step 3. model trains itself with the datamodule
-    model.fit(data_module)
-    model.test(data_module)
-
-    # Step 4. model predicts
-    y = model(torch.rand(32, 4096, 1))
-    print(torch.softmax(y, dim=-1))
+    # 第4步：训练和测试。此处你需要指定训练参数，例如lr、max_epochs等。
+    framework.fit(datamodule)
+    framework.test(datamodule)
 
 
 if __name__ == "__main__":

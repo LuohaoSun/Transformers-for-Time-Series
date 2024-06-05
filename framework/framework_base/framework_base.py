@@ -10,84 +10,26 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch import Tensor
 from abc import ABC, abstractmethod
 from rich import print
-from .default_callbacks import *
-from .default_callbacks import get_default_callbacks
+from .general_functionalities import get_general_functionalities
 
 
 class FrameworkBase(L.LightningModule, ABC):
-    """
-    Base model class for time series tasks.
 
-    This class provides the following functionalities:
-    1. Defines the inheritance specification of L.LightningModule in the project. Subclasses need to implement methods such as loss, training_step, val_step, test_step.
-    2. Encapsulates the structure of backbone-head and implements methods such as forward, configure_optimizers.
-    3. Defines methods such as fit, test, run_training, run_testing for easy invocation.
-
-    Properties:
-        backbone (nn.Module): The backbone module.
-        head (nn.Module): The head module.
-
-    Methods:
-        forward(x: Tensor) -> Tensor:
-            Performs forward pass on the input tensor.
-
-        fit(datamodule: L.LightningDataModule) -> None:
-            Trains the model using the provided LightningDataModule.
-
-        test(datamodule: L.LightningDataModule) -> None:
-            Tests the model using the provided LightningDataModule.
-
-        run_training(datamodule: L.LightningDataModule) -> None:
-            Same as fit. Trains the model using the provided LightningDataModule.
-
-        run_testing(datamodule: L.LightningDataModule) -> None:
-            Same as test. Tests the model using the provided LightningDataModule.
-    """
-
-    def __init__(
-        self,
-        backbone: nn.Module,
-        head: nn.Module,
-        additional_callbacks: list[L.Callback],
-        lr: float,
-        max_epochs: int,
-        max_steps: int,
-    ) -> None:
-        """
-        Initializes the FrameworkBase.
-
-        Args:
-            backbone (nn.Module): The backbone module.
-            head (nn.Module): The head module.
-            additional_callbacks (list[L.Callback]): Additional callbacks for the trainer.
-            lr (float): The learning rate for the optimizer.
-            max_epochs (int): The maximum number of epochs for training.
-            max_steps (int): The maximum number of steps for training.
-        """
+    def __init__(self) -> None:
         super().__init__()
 
-        self.backbone = backbone
-        self.head = head
-
-        self.framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        self.framework_trainer = L.Trainer(
-            max_epochs=max_epochs,
-            max_steps=max_steps,
-            callbacks=get_default_callbacks() + additional_callbacks,
-            accelerator="auto",
-        )
-
-    @abstractmethod
-    def loss(self, output: Tensor, target: Tensor) -> Tensor:
+    @property
+    def functionalities(self) -> list[L.Callback]:
         """
-        Calculates the loss between the model's output and the target.
+        The general functionalities for the framework.
+        """
+        return get_general_functionalities() + self.task_functionalities
 
-        Args:
-            output (Tensor): The model's output tensor.
-            target (Tensor): The target tensor.
-
-        Returns:
-            Tensor: The calculated loss tensor.
+    @property
+    @abstractmethod
+    def task_functionalities(self) -> list[L.Callback]:
+        """
+        The task-specific functionalities for the framework.
         """
         ...
 
@@ -139,6 +81,7 @@ class FrameworkBase(L.LightningModule, ABC):
         """
         ...
 
+    @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
         """
         Performs forward pass on the input tensor.
@@ -149,9 +92,7 @@ class FrameworkBase(L.LightningModule, ABC):
         Returns:
             Tensor: The output tensor of shape (batch_size, out_seq_len, out_features).
         """
-        x = self.backbone(x)
-        x = self.head(x)
-        return x
+        ...
 
     def configure_optimizers(self) -> Dict[str, Union[Optimizer, LRScheduler]]:
         """
@@ -160,25 +101,51 @@ class FrameworkBase(L.LightningModule, ABC):
         Returns:
             Dict[str, Union[Optimizer, LRScheduler]]: The optimizer configuration.
         """
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return {"optimizer": self.framework_optimizer}
 
-    def fit(self, datamodule: L.LightningDataModule) -> None:
+    def fit(
+        self,
+        # datamodule:
+        datamodule: L.LightningDataModule,
+        # training params:
+        lr: float = 1e-3,
+        max_epochs: int = 1,
+        max_steps: int = -1,
+        accelerator: str = "auto",
+        **trainer_kwargs,
+    ) -> None:
         """
         Trains the model using the provided LightningDataModule.
 
         Args:
             datamodule (L.LightningDataModule): The LightningDataModule for training.
+            lr (float): The learning rate for the optimizer.
+            max_epochs (int): The maximum number of epochs for training.
+            max_steps (int): The maximum number of steps for training.
+            accelerator (str): The accelerator for training.
+            **trainer_kwargs: Additional arguments for the trainer.
+            TODO: add lr_scheduler
         """
+        self.hparams.update(
+            {
+                "lr": lr,
+                "max_epochs": max_epochs,
+                "max_steps": max_steps,
+                "accelerator": accelerator,
+                **trainer_kwargs,
+            }
+        )
+        self.framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self.framework_trainer = L.Trainer(
+            max_epochs=max_epochs,
+            max_steps=max_steps,
+            callbacks=self.functionalities,
+            accelerator=accelerator,
+            **trainer_kwargs,
+        )
         self.framework_trainer.fit(self, datamodule)
-
-    def train(self, datamodule: L.LightningDataModule) -> None:
-        """
-        Same as fit. Trains the model using the provided LightningDataModule.
-
-        Args:
-            datamodule (L.LightningDataModule): The LightningDataModule for training.
-        """
-        return self.fit(datamodule)
+        
 
     def test(self, datamodule: L.LightningDataModule) -> None:
         """
@@ -188,24 +155,6 @@ class FrameworkBase(L.LightningModule, ABC):
             datamodule (L.LightningDataModule): The LightningDataModule for testing.
         """
         self.framework_trainer.test(self, datamodule)
-
-    def run_training(self, datamodule: L.LightningDataModule) -> None:
-        """
-        Same as fit. Trains the model using the provided LightningDataModule.
-
-        Args:
-            datamodule (L.LightningDataModule): The LightningDataModule for training.
-        """
-        return self.fit(datamodule)
-
-    def run_testing(self, datamodule: L.LightningDataModule) -> None:
-        """
-        Same as test. Tests the model using the provided LightningDataModule.
-
-        Args:
-            datamodule (L.LightningDataModule): The LightningDataModule for testing.
-        """
-        return self.test(datamodule)
 
     def load_checkpoint(self, ckpt_path: str):
         self = self.__class__.load_from_checkpoint(checkpoint_path=ckpt_path)

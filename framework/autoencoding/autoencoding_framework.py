@@ -112,18 +112,13 @@ class AutoEncodingFramework(FrameworkBase):
         self,
         # model params
         backbone: nn.Module,
-        head: nn.Module,
-        # logging params
-        every_n_epochs: int,
-        figsize: Tuple[int, int],
-        dpi: int,
-        # training params
-        lr: float,
-        max_epochs: int,
-        max_steps: int,
+        # task params
         mask_ratio: float = 0,
         mask_length: int = 1,
         loss_type: str = "full",  # 'full', 'masked', 'hybrid'
+        # logging params
+        every_n_epochs: int = 1,
+        figsize: Tuple[int, int] = (8, 8),
     ) -> None:
         """
         Initializes the Framework class.
@@ -145,17 +140,16 @@ class AutoEncodingFramework(FrameworkBase):
             mask_ratio > 0 or loss_type == "full"
         ), "mask_ratio should be greater than 0 when loss_type is not 'full'"
 
-        super().__init__(
-            backbone=backbone,
-            head=head,
-            additional_callbacks=[ViAndLog2Tensorboard(every_n_epochs, figsize, dpi)],
-            lr=lr,
-            max_epochs=max_epochs,
-            max_steps=max_steps,
-        )
+        super().__init__()
+        self.backbone = backbone
+        self.every_n_epochs = every_n_epochs
+        self.figsize = figsize
 
         self.random_mask = RandomMask(mask_ratio, mask_length)
         self.loss_func = MaskedLoss(loss_type=loss_type)
+
+    def task_functionalities(self):
+        return [ViAndLog2Tensorboard(self.every_n_epochs, self.figsize)]
 
     def encode(self, x: Tensor) -> Tensor:
         """

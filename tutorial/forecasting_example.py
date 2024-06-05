@@ -20,9 +20,9 @@ if __name__ == "__main__":
     )
 
     # Step 2. Choose a model (ForecastingFramework from models.forecasting_models)
-    import models
+    import modules
 
-    model = models.forecasting_models.LSTM(
+    model = modules.forecasting_models.LSTM(
         input_size=276,  # here we know the input size is 276
         hidden_size=128,
         num_layers=2,

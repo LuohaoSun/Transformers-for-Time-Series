@@ -12,17 +12,12 @@ from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
 from lightning.pytorch.loggers import TensorBoardLogger
 
+# TODO: rename to universal_functionalities.py
 
-__all__ = [
-    "get_default_callbacks",
-    "LaunchTensorboard",
-    "LogHyperparams",
-    "LogLoss",
-    "LoadCheckpoint",
-]
+__all__ = ["get_general_functionalities"]
 
 
-def get_default_callbacks() -> list[L.Callback]:
+def get_general_functionalities() -> list[L.Callback]:
     return [
         # lightning built-in callbacks
         ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
@@ -83,16 +78,16 @@ tensorboard PID: {self.proc.pid}
         return super().on_train_start(trainer, pl_module)
 
     def on_train_end(self, trainer, pl_module) -> None:
-        kill_proc = True if input("Terminate tensorboard? ([Y]/n): ") != "n" else False
-        if kill_proc:
-            self.proc.terminate()
-            msg = f"""
+        # kill_proc = True if input("Terminate tensorboard? ([Y]/n): ") != "n" else False
+        # if kill_proc:
+        self.proc.terminate()
+        msg = f"""
 =======================================
 =      Tensorboard Dectivated.        =
 =======================================
 """
-        else:
-            msg = f"""
+        # else:
+        msg = f"""
 kill the tensorboard with
 kill {self.proc.pid}
 if you dont need it.

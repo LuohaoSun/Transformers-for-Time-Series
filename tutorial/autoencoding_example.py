@@ -7,14 +7,14 @@ def main():
     import torch
 
     # Step 1. Choose a dataset (L.LightningDataModule)
-    from data.bearing_fault_prediction.raw.fault_prediction_datamodule import (
+    from data.bearing_fault_prediction.datamodule import (
         FaultPredictionDataModule,
     )
 
     datamodule = FaultPredictionDataModule(batch_size=40)
 
     # Step 2. Choose a model (AutoEncodingFramework from models.autoencoding_models)
-    from models.autoencoding.autoencoding_models import PatchTSTAutoEncodingModel
+    from modules.autoencoding.autoencoding_models import PatchTSTAutoEncodingModel
 
     model = PatchTSTAutoEncodingModel(
         in_features=1,

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import lightning as L
-from ..components import positional_embedding as PE
-from ..components import token_embedding as TE
+from .components import positional_embedding as PE
+from .components import token_embedding as TE
 from torch import Tensor
 from typing import Any, Dict, Iterable, Mapping, Union, Callable
 
@@ -41,10 +41,11 @@ class PatchTSTBackbone(L.LightningModule):
             additional_tokens_at_last (int, optional): Number of additional tokens to be added at the end of the sequence.
                 These tokens can be used for classification, regression or other tasks. Defaults to 0.
             norm_first (bool, optional): Whether to apply layer normalization before the attention layer. Defaults to True.
-
+        TODO: save_hyperparameters to be added.
         """
         super().__init__()
 
+        self.d_model = d_model
         self.token_emb = TE.PatchEmbedding(
             in_features=in_features,
             d_model=d_model,

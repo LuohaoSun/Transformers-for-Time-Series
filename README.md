@@ -35,7 +35,9 @@ To get started, clone the repository and install the required packages using the
 ```shell
 git clone https://github.com/LuohaoSun/Transformers-for-Time-Series.git
 cd Transformers-for-Time-Series
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -r requirements.txt
+# For users in China mainland, you can use the following command to install the required packages:
+# pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 Make sure you have Python version **>= 3.12**. You can check your Python version by running:

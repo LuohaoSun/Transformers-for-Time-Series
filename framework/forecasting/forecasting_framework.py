@@ -34,7 +34,7 @@ class ForecastingFramework(FrameworkBase):
         super().__init__(
             backbone=backbone,
             head=head,
-            additional_callbacks=[
+            task_functionalities=[
                 ComputeMetricsAndLog(),
                 ViAndLog2Tensorboard(
                     every_n_epochs=evry_n_epochs,

@@ -2,12 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import lightning as L
-from ..components import positional_embedding as PE
-from ..components import token_embedding as TE
+from .components import positional_embedding as PE
+from .components import token_embedding as TE
 from torch import Tensor
 from typing import Any, Dict, Iterable, Mapping, Union, Callable
-from ..components.activations import get_activation_fn
-from ..components import token_embedding as TE
+from .components.activations import get_activation_fn
 
 
 class MLPBackbone(L.LightningModule):
