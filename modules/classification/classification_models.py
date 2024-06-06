@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch import Tensor
-from framework import ClassificationFramework
+from frameworks import ClassificationFramework
 from ..components.activations import get_activation_fn
 from ..backbones.patchtst import PatchTSTEncoder
 from modules.classification.classification_heads import *

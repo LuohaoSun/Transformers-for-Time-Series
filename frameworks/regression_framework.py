@@ -7,7 +7,7 @@ import numpy as np
 from typing import Mapping, Iterable
 from torch import Tensor
 from abc import ABC, abstractmethod
-from ..framework_base.framework_base import FrameworkBase
+from .framework_base import FrameworkBase
 
 
 class RegressionFramework(FrameworkBase, ABC): ...

@@ -87,11 +87,11 @@ tensorboard PID: {self.proc.pid}
 =======================================
 """
         # else:
-        msg = f"""
-kill the tensorboard with
-kill {self.proc.pid}
-if you dont need it.
-"""
+        #         msg = f"""
+        # kill the tensorboard with
+        # kill {self.proc.pid}
+        # if you dont need it.
+        # """
         return print(msg)
 
 

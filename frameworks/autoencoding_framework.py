@@ -1,6 +1,7 @@
 # Author: Sun LuoHao
 # All rights reserved
 
+from functools import partial
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
@@ -8,11 +9,11 @@ import torch
 from typing import Mapping, Iterable, Tuple
 from torch import Tensor
 
-from ..framework_base.framework_base import FrameworkBase
-from .autoencoding_callbacks import ViAndLog2Tensorboard
+from .framework_base import FrameworkBase
+from .functionalities.autoencoding_callbacks import ViAndLog2Tensorboard
 
 
-class RandomMask(L.LightningModule):
+class RandomMasker(L.LightningModule):
     def __init__(self, mask_ratio, mask_length=1) -> None:
         """
         mask the input tensor and store the mask in property.
@@ -112,10 +113,14 @@ class AutoEncodingFramework(FrameworkBase):
         self,
         # model params
         backbone: nn.Module,
+        backbone_out_seq_len: int,
+        backbone_out_features: int,
         # task params
+        out_seq_len: int,
+        out_features: int,
         mask_ratio: float = 0,
         mask_length: int = 1,
-        loss_type: str = "full",  # 'full', 'masked', 'hybrid'
+        loss_type: str = "hybrid",  # 'full', 'masked', 'hybrid'
         # logging params
         every_n_epochs: int = 1,
         figsize: Tuple[int, int] = (8, 8),
@@ -141,13 +146,27 @@ class AutoEncodingFramework(FrameworkBase):
         ), "mask_ratio should be greater than 0 when loss_type is not 'full'"
 
         super().__init__()
+        self.save_hyperparameters(logger=False)
+
         self.backbone = backbone
+        self.neck = nn.Linear(backbone_out_seq_len, out_seq_len)
+        self.head = nn.Linear(backbone_out_features, out_features)
+
+        self.loss_type = loss_type
+
         self.every_n_epochs = every_n_epochs
         self.figsize = figsize
 
-        self.random_mask = RandomMask(mask_ratio, mask_length)
-        self.loss_func = MaskedLoss(loss_type=loss_type)
+        self.random_masker = RandomMasker(mask_ratio, mask_length)
+        self.masked_loss = MaskedLoss(loss_type=loss_type)
 
+    @property
+    def _loss(self):
+        # 由于self.random_mask.mask是一个可变对象，因此每次调用此loss时都会使用最新的mask
+        return nn.MSELoss()
+        return partial(self.masked_loss, mask=self.random_masker.mask)
+
+    @property
     def task_functionalities(self):
         return [ViAndLog2Tensorboard(self.every_n_epochs, self.figsize)]
 
@@ -163,28 +182,30 @@ class AutoEncodingFramework(FrameworkBase):
         input: (batch_size, seq_len, hidden_features)
         output: (batch_size, seq_len, n_features)
         """
+        x = self.neck(x.permute(0, 2, 1)).permute(0, 2, 1)
         return self.head(x)
 
-    def loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """
         input: (batch_size, seq_len, n_features)
-        output: scalar
+        output: (batch_size, seq_len, n_features)
         """
-        mask = self.random_mask.mask
-        return self.loss_func(x, x_hat, mask)
+        x = self.encode(x)
+        x = self.decode(x)
+        return x
 
     def training_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
 
         x, y = batch
-        masked_input = self.random_mask(x)
-        mask = self.random_mask.mask
+        masked_input = self.random_masker(x)
+        mask = self.random_masker.mask
 
         x_hat = self.forward(masked_input)
         loss = self.loss(x, x_hat)
 
-        if self.random_mask.mask_ratio > 0:
+        if self.random_masker.mask_ratio > 0:
             return {
                 "loss": loss,
                 "original": x,

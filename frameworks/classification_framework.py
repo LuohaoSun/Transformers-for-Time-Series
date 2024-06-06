@@ -1,13 +1,16 @@
 # Author: Sun LuoHao
 # All rights reserved
 import lightning as L
+import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
-from typing import Mapping, Iterable
+from typing import Mapping, Iterable, Callable
 from torch import Tensor
-from ..framework_base.framework_base import FrameworkBase
-from .classification_functionalities import ComputeAndLogMetrics2Tensorboard
+from .framework_base import FrameworkBase
+from .functionalities.classification_functionalities import (
+    ComputeAndLogMetrics2Tensorboard,
+)
 
 
 class ClassificationFramework(FrameworkBase):
@@ -16,8 +19,8 @@ class ClassificationFramework(FrameworkBase):
         self,
         # backbone:
         backbone: nn.Module,
+        backbone_out_features: int,
         # task params:
-        hidden_features: int,
         out_seq_len: int,
         num_classes: int,
     ) -> None:
@@ -29,12 +32,15 @@ class ClassificationFramework(FrameworkBase):
         self.save_hyperparameters(logger=False)
 
         self.backbone = backbone
-        self.head = nn.Linear(hidden_features, num_classes)
-        self.loss = nn.CrossEntropyLoss()
+        self.head = nn.Linear(backbone_out_features, num_classes)
 
     @property
     def task_functionalities(self) -> list[L.Callback]:
         return [ComputeAndLogMetrics2Tensorboard(self.num_classes)]
+
+    @property
+    def _loss(self) -> Callable:
+        return nn.CrossEntropyLoss()
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -52,6 +58,8 @@ class ClassificationFramework(FrameworkBase):
 
         x, y = batch
         if len(y.size()) == 2:
+            # 兼容单个时间步的标签(batch_size, 1) or (batch_size, num_classes)
+            # TODO: 规范为只接受三维标签(batch_size, seq_len, 1) or (batch_size, seq_len, num_classes)
             y = y.unsqueeze(1)
         y_hat = self.forward(x)
         loss = self.loss(y_hat, y)

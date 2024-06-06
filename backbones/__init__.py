@@ -1,3 +1,3 @@
-'''
-所有backbone必须包含d_model参数，即模型的维度
-'''
+from .patchtst import PatchTSTBackbone
+from .lstm import LSTMBackbone
+from .mlp import MLPBackbone

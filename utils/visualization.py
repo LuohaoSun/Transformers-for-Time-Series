@@ -17,7 +17,7 @@ class SeriesPlotter:
     def plot_and_show(
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
-        figsize=(10, 6),
+        figsize=(5, 5),
     ) -> Figure:
         img = cls._plot_series(series, figsize)
         plt.show()
@@ -72,7 +72,6 @@ class SeriesPlotter:
         plt.ylabel("Value")
         plt.legend()
         img = plt.gcf()
-        plt.close()
         return img
 
     @staticmethod
