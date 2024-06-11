@@ -6,8 +6,8 @@ import lightning as L
 from typing import Mapping, Iterable
 from torch import Tensor
 from .framework_base import FrameworkBase
-from .functionalities.forecasting_callbacks import ComputeMetricsAndLog
-from .functionalities.autoencoding_callbacks import ViAndLog2Tensorboard
+from .callbacks.forecasting_callbacks import ComputeMetricsAndLog
+from .callbacks.autoencoding_callbacks import ViAndLog2Tensorboard
 
 
 class ForecastingFramework(FrameworkBase):
@@ -25,22 +25,22 @@ class ForecastingFramework(FrameworkBase):
         # task params
         out_seq_len: int,
         out_features: int,
-        # logging params
-        evry_n_epochs: int = 20,
-        fig_size: tuple[int, int] = (10, 5),
+        # visualization params
+        vi_every_n_epochs: int = 20,
+        vi_fig_size: tuple[int, int] = (10, 5),
     ) -> None:
         super().__init__()
         self.save_hyperparameters(logger=False)
         self.out_seq_len = out_seq_len
         self.out_features = out_features
-        self.every_n_epochs = evry_n_epochs
-        self.fig_size = fig_size
+        self.every_n_epochs = vi_every_n_epochs
+        self.fig_size = vi_fig_size
 
         self.backbone = backbone
         self.head = nn.Linear(backbone_out_features, out_features)
 
     @property
-    def task_functionalities(self) -> list[L.Callback]:
+    def _task_callbacks(self) -> list[L.Callback]:
         return [
             ComputeMetricsAndLog(),
             ViAndLog2Tensorboard(

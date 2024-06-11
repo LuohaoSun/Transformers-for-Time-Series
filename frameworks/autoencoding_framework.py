@@ -1,16 +1,17 @@
 # Author: Sun LuoHao
 # All rights reserved
 
+from ast import Call
 from functools import partial
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from typing import Mapping, Iterable, Tuple
+from typing import Mapping, Iterable, Tuple, Callable
 from torch import Tensor
 
 from .framework_base import FrameworkBase
-from .functionalities.autoencoding_callbacks import ViAndLog2Tensorboard
+from .callbacks.autoencoding_callbacks import ViAndLog2Tensorboard
 
 
 class RandomMasker(L.LightningModule):
@@ -29,7 +30,7 @@ class RandomMasker(L.LightningModule):
         assert 0 <= mask_ratio < 1
         self.mask_ratio = mask_ratio
         self.mask_length = mask_length
-        self.mask: Tensor
+        self.mask: Tensor = torch.zeros(1, 1, 1, dtype=torch.bool)
 
     def forward(self, tensor: Tensor) -> Tensor:
         """
@@ -161,13 +162,16 @@ class AutoEncodingFramework(FrameworkBase):
         self.masked_loss = MaskedLoss(loss_type=loss_type)
 
     @property
-    def _loss(self):
-        # 由于self.random_mask.mask是一个可变对象，因此每次调用此loss时都会使用最新的mask
-        return nn.MSELoss()
-        return partial(self.masked_loss, mask=self.random_masker.mask)
+    def _loss(self) -> Callable:
+        return self.partial_masked_loss
+
+    def partial_masked_loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
+        # 每次调用此函数时，都会从self.random_masker中获取最新的mask
+        mask = self.random_masker.mask
+        return self.masked_loss(x, x_hat, mask)
 
     @property
-    def task_functionalities(self):
+    def _task_callbacks(self):
         return [ViAndLog2Tensorboard(self.every_n_epochs, self.figsize)]
 
     def encode(self, x: Tensor) -> Tensor:

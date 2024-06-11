@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch import Tensor
 from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
-from .functionalities.general_functionalities import get_general_functionalities
+from .callbacks.default_callbacks import get_default_callbacks
 from .utils import get_loss_fn
 
 
@@ -18,15 +18,29 @@ class FrameworkBase(L.LightningModule, ABC):
 
     def __init__(self) -> None:
         super().__init__()
-        # self.loss = self._loss
+        self.loss = self._loss
 
     @property
     @abstractmethod
-    def task_functionalities(self) -> list[L.Callback]:
+    def _task_callbacks(self) -> list[L.Callback]:
         """
         The task-specific functionalities for the framework.
         """
         ...
+
+    @property
+    def _default_callbacks(self) -> list[L.Callback]:
+        """
+        The default callbacks for the framework.
+        """
+        return get_default_callbacks()
+
+    @property
+    def _framework_callbacks(self) -> list[L.Callback]:
+        """
+        The general functionalities for the framework.
+        """
+        return self._default_callbacks + self._task_callbacks
 
     @property
     @abstractmethod
@@ -107,16 +121,9 @@ class FrameworkBase(L.LightningModule, ABC):
         """
         This method is called before the training and testing steps.
         """
-        if self.compile_model:
+        if self._compile_model:
             self = torch.compile(self)
         return
-
-    @property
-    def functionalities(self) -> list[L.Callback]:
-        """
-        The general functionalities for the framework.
-        """
-        return get_general_functionalities() + self.task_functionalities
 
     def configure_optimizers(self) -> Dict[str, Union[Optimizer, LRScheduler]]:
         """
@@ -126,7 +133,7 @@ class FrameworkBase(L.LightningModule, ABC):
             Dict[str, Union[Optimizer, LRScheduler]]: The optimizer configuration.
         """
 
-        return {"optimizer": self.framework_optimizer}
+        return {"optimizer": self._framework_optimizer}
 
     def fit(
         self,
@@ -135,6 +142,8 @@ class FrameworkBase(L.LightningModule, ABC):
         train_dataloaders: list[DataLoader] | DataLoader | None = None,
         val_dataloaders: list[DataLoader] | DataLoader | None = None,
         ckpt_path: str | None = None,
+        # logging params:
+        log_every_n_steps: int = 1,
         # training params:
         lr: float = 1e-3,
         max_epochs: int = 1,
@@ -171,22 +180,21 @@ class FrameworkBase(L.LightningModule, ABC):
         )
 
         # configure framework properties:
-        self.compile_model = compile_model
-        if loss_fn is not None:
-            self.loss = get_loss_fn(loss_fn)
-        else:
-            self.loss = self._loss
-        self.framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        self.framework_trainer = L.Trainer(
+        self._compile_model = compile_model
+        self.loss = get_loss_fn(loss_fn) if loss_fn is not None else self.loss
+        self._framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self._framework_trainer = L.Trainer(
             max_epochs=max_epochs,
             max_steps=max_steps,
-            callbacks=self.functionalities,
+            callbacks=self._framework_callbacks,
             accelerator=accelerator,
+            log_every_n_steps=log_every_n_steps,
+            enable_model_summary=False,
             **trainer_kwargs,
         )
 
         # fit the model:
-        self.framework_trainer.fit(
+        self._framework_trainer.fit(
             model=self,
             datamodule=datamodule,
             train_dataloaders=train_dataloaders,
@@ -204,7 +212,7 @@ class FrameworkBase(L.LightningModule, ABC):
         verbose: bool = True,
     ) -> None:
 
-        self.framework_trainer.test(
+        self._framework_trainer.test(
             self,
             datamodule=datamodule,
             dataloaders=dataloaders,

@@ -1,6 +1,5 @@
 import lightning as L
 import subprocess
-import yaml
 from typing import Mapping
 from torch import Tensor
 from lightning.pytorch.callbacks import (
@@ -11,19 +10,22 @@ from lightning.pytorch.callbacks import (
 from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
 from lightning.pytorch.loggers import TensorBoardLogger
+import socket
 
 # TODO: rename to universal_functionalities.py
 
-__all__ = ["get_general_functionalities"]
+__all__ = ["get_default_callbacks"]
 
 
-def get_general_functionalities() -> list[L.Callback]:
+def get_default_callbacks() -> list[L.Callback]:
     return [
         # lightning built-in callbacks
         ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
         RichModelSummary(max_depth=3),
         RichProgressBar(),
         # framework default callbacks
+        PrintTrainingMsg(),
+        PrintTestMsg(),
         LogGraph(),
         LogHyperparams(),
         LogLoss(),
@@ -55,19 +57,56 @@ class PrintTrainingMsg(L.Callback):
         return super().on_train_end(trainer, pl_module)
 
 
+class PrintTestMsg(L.Callback):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def on_test_start(self, trainer, pl_module) -> None:
+        msg = f"""
+=======================================
+=            Test Started.            =
+=======================================
+"""
+        print(msg)
+        return super().on_test_start(trainer, pl_module)
+
+    def on_test_end(self, trainer, pl_module) -> None:
+        msg = f"""
+=======================================
+=            Test Finished.           =
+=======================================
+"""
+        print(msg)
+        return super().on_test_end(trainer, pl_module)
+
+
 class LaunchTensorboard(L.Callback):
     def __init__(self) -> None:
         super().__init__()
         self.proc: subprocess.Popen
-        pass
+
+    def is_port_in_use(self, port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("localhost", port))
+                return False
+            except OSError:
+                return True
+
+    def on_fit_start(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
+        return super().on_fit_start(trainer, pl_module)
 
     def on_train_start(self, trainer, pl_module) -> None:
-        self.proc = subprocess.Popen(
-            ["tensorboard", "--logdir=lightning_logs"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        msg = f"""
+
+        if self.is_port_in_use(6006):
+            msg = "Port 6006 already in use, tensorboard not activated."
+        else:
+            self.proc = subprocess.Popen(
+                ["tensorboard", "--logdir=lightning_logs"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            msg = f"""
 =======================================
 =        Tensorboard Activated.       =
 =======================================
@@ -78,21 +117,15 @@ tensorboard PID: {self.proc.pid}
         return super().on_train_start(trainer, pl_module)
 
     def on_train_end(self, trainer, pl_module) -> None:
-        # kill_proc = True if input("Terminate tensorboard? ([Y]/n): ") != "n" else False
-        # if kill_proc:
-        self.proc.terminate()
-        msg = f"""
+        if hasattr(self, "proc"):
+            self.proc.terminate()
+            msg = f"""
 =======================================
-=      Tensorboard Dectivated.        =
+=      Tensorboard Deactivated.       =
 =======================================
 """
-        # else:
-        #         msg = f"""
-        # kill the tensorboard with
-        # kill {self.proc.pid}
-        # if you dont need it.
-        # """
-        return print(msg)
+            print(msg)
+        return
 
 
 class LogGraph(L.Callback):
@@ -110,7 +143,7 @@ class LogGraph(L.Callback):
     ) -> None:
         if trainer.current_epoch == 0 and batch_idx == 0:
             tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
-            tb_writer.add_graph(pl_module, batch[0])
+            tb_writer.add_graph(pl_module, batch[0][0:1, ...])
 
         return super().on_validation_batch_end(
             trainer, pl_module, outputs, batch, batch_idx, dataloader_idx

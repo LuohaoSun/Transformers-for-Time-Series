@@ -12,36 +12,34 @@ from .components.activations import get_activation_fn
 class MLPBackbone(L.LightningModule):
     """
     吗乐批骨干。
-    this simple MLP backbone encode each channel of the input sequence independently while sharing the same weights.
-    i.e. (Batch, in_seq_len, in_channels) -> (Batch, out_seq_len, in_channels)
+    This is a simple MLP backbone for sequence data, which flattens the input sequence and applies a series of linear layers.
     """
 
     def __init__(
         self,
         in_seq_len: int,
-        hidden_len: tuple[int, ...],
-        out_seq_len: int,
-        activation: str | Callable[[Tensor], Tensor] = "gelu",
+        in_features: int,
+        hidden_features: list[int],
+        activation: str | Callable[[Tensor], Tensor] = "relu",
     ) -> None:
         super().__init__()
-        self.embed = nn.Linear(in_seq_len, hidden_len[0])
+        self.embed = nn.Linear(in_seq_len * in_features, hidden_features[0])
         self.layers = nn.Sequential(
             *[
                 nn.Sequential(
-                    nn.Linear(hidden_len[i], hidden_len[i + 1]),
+                    nn.Linear(hidden_features[i], hidden_features[i + 1]),
                     get_activation_fn(activation),
                 )
-                for i in range(len(hidden_len) - 1)
+                for i in range(len(hidden_features) - 1)
             ]
         )
-        self.proj = nn.Linear(hidden_len[-1], out_seq_len)
 
     def forward(self, x: Tensor) -> Tensor:
         """
         input: Tensor with shape (Batch, in_seq_len, in_features)
-        output: Tensor with shape (Batch, out_seq_len, in_features)
+        output: Tensor with shape (Batch, 1, out_features)
         """
-        x = self.embed(x.permute(0, 2, 1))
+        x = x.flatten(1)
+        x = self.embed(x)
         x = self.layers(x)
-        x = self.proj(x)
-        return x.permute(0, 2, 1)
+        return x.unsqueeze(1)

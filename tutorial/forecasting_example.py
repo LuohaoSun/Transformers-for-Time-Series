@@ -6,7 +6,7 @@ sys.path.append("./")
 
 if __name__ == "__main__":
     # Step 1. Choose a dataset (customized dataset from framework.forecasting.forecasting_datamodule)
-    from utils.create_datamodule.forecasting_datamodule import ForecastingDataModule
+    from utils.datamodule.forecasting_datamodule import ForecastingDataModule
 
     datamodule = ForecastingDataModule(
         csv_file_path="data/BJinflow/in_10min_trans.csv",
@@ -37,8 +37,8 @@ if __name__ == "__main__":
         backbone_out_features=64,
         out_seq_len=24,
         out_features=276,
-        evry_n_epochs=10,
-        fig_size=(10, 5),
+        vi_every_n_epochs=10,
+        vi_fig_size=(10, 5),
     )
 
     # Step 4. fit and test

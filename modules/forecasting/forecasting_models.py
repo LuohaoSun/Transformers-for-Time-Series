@@ -90,8 +90,8 @@ class PatchTST(ForecastingFramework):
             max_epochs=max_epochs,
             max_steps=max_steps,
             loss_type=loss_type,
-            evry_n_epochs=evry_n_epochs,
-            fig_size=fig_size,
+            vi_every_n_epochs=evry_n_epochs,
+            vi_fig_size=fig_size,
         )
 
     def configure_backbone(self):

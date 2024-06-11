@@ -1,0 +1,4 @@
+from autoencoding_datamodule import AutoEncodingDataModule
+from classification_datamodule import ClassificationDataModule
+from forecasting_datamodule import ForecastingDataModule
+from regression_datamodule import RegressionDataModule
