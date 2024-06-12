@@ -46,6 +46,7 @@ class RegressionDataModule(L.LightningDataModule):
         pass
 
     def train_dataloader(self):
+        raise NotImplementedError
         pass
 
     def val_dataloader(self):

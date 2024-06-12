@@ -8,9 +8,12 @@ from torch.utils.data import DataLoader, Dataset
 
 class ForecastingDataModule(L.LightningDataModule):
     """
+    Convert a .csv file to a LightningDataModule for forecasting tasks.
+
     __init__: load a csv file and convert it to a LightningDataModule.
     from_datasets: load a list of datasets and convert it to a LightningDataModule. See:
     {L.LightningDataModule.from_datasets}
+
     """
 
     def __init__(
@@ -24,6 +27,17 @@ class ForecastingDataModule(L.LightningDataModule):
         num_workers: int = 0,
         normalization: str = "01",  # 01, zscore, minmax, none
     ) -> None:
+        """
+        Args:
+            csv_file_path: str, the path of the .csv file. Each row is a time step, and each column is a feature.
+            stride: int, the stride of the sliding window.
+            input_length: int, the length of the input sequence.
+            output_length: int, the length of the output sequence.
+            batch_size: int, the batch size.
+            train_val_test_split: Tuple[float, float, float], the ratio of train, validation and test set.
+            num_workers: int, the number of workers for DataLoader.
+            normalization: str, the normalization method. 01, zscore, minmax, none.
+        """
         super().__init__()
         self.file_path = csv_file_path
         self.stride = stride
@@ -127,7 +141,7 @@ class ForecastingDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            persistent_workers=True
+            persistent_workers=True,
         )
 
 

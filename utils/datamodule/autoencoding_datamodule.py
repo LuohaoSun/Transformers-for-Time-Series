@@ -17,7 +17,7 @@ class AutoEncodingDataModule(L.LightningDataModule):
         output_length: int,
         batch_size: int,
         train_val_test_split: Tuple[float, float, float] = (0.7, 0.2, 0.1),
-        num_workers: int = 0,
+        num_workers: int = 1,
     ) -> None:
         super().__init__()
         self.file_path = csv_file_path
@@ -41,6 +41,7 @@ class AutoEncodingDataModule(L.LightningDataModule):
         pass
 
     def train_dataloader(self):
+        raise NotImplementedError
         pass
 
     def val_dataloader(self):
