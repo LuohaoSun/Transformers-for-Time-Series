@@ -1,5 +1,9 @@
 from typing import Tuple
+import torch
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
 import lightning as L
+import pandas as pd
 
 
 class AutoEncodingDataModule(L.LightningDataModule):
@@ -14,15 +18,14 @@ class AutoEncodingDataModule(L.LightningDataModule):
         self,
         csv_file_path: str,
         input_length: int,
-        output_length: int,
         batch_size: int,
         train_val_test_split: Tuple[float, float, float] = (0.7, 0.2, 0.1),
         num_workers: int = 1,
+        ignore_last_cols: int = 0,
     ) -> None:
         super().__init__()
         self.file_path = csv_file_path
         self.input_length = input_length
-        self.output_length = output_length
         self.batch_size = batch_size
         self.train_val_test_split = train_val_test_split
         self.num_workers = num_workers
@@ -51,6 +54,28 @@ class AutoEncodingDataModule(L.LightningDataModule):
         pass
 
 
-if __name__ == "__main__":
-    datamodule = AutoEncodingDataModule("", 1, 1, 1)
-    pass
+class AutoEncodingDataset(Dataset):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        input_length: int,
+        stride: int,
+        ignore_last_cols: int,
+    ):
+        self.data = data
+        self.input_length = input_length
+        self.ignore_last_cols = ignore_last_cols
+
+        self.samples = []
+
+        for i in tqdm(range(0, len(data) - input_length + 1, stride)):
+            x = data.iloc[i : i + input_length]
+            x = torch.tensor(x.values, dtype=torch.float32)
+            self.samples.append((x, None))
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        return self.samples[index]
+

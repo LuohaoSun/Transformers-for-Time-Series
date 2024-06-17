@@ -17,7 +17,8 @@ def main():
     MLP骨干的结构如下：
     - 输入层：4096个神经元
     - 3个全连接层：每层包含256个神经元
-    - 输出层：4个神经元
+    
+    Framework包括了一个全连接层作为分类器，输出4个类别。
     """
     # 第1步：根据数据集创建datamodule。此处你需要指定数据集的参数，例如batch_size、子集划分等。
     from data.bearing_fault_prediction import FaultPredictionDataModule

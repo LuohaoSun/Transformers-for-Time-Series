@@ -4,6 +4,7 @@ import lightning as L
 import torch.nn as nn
 import torch
 
+from lightning.pytorch.loggers import TensorBoardLogger
 from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
@@ -183,10 +184,14 @@ class FrameworkBase(L.LightningModule, ABC):
         self._compile_model = compile_model
         self.loss = get_loss_fn(loss_fn) if loss_fn is not None else self.loss
         self._framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self._framework_logger = TensorBoardLogger(
+            save_dir=".", name="lightning_logs", default_hp_metric=False
+        )
         self._framework_trainer = L.Trainer(
             max_epochs=max_epochs,
             max_steps=max_steps,
             callbacks=self._framework_callbacks,
+            logger=self._framework_logger,
             accelerator=accelerator,
             log_every_n_steps=log_every_n_steps,
             enable_model_summary=False,

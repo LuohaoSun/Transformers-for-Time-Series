@@ -12,7 +12,7 @@ We've designed this framework with simplicity in mind. Choose your dataset and t
 
 ### Flexibility at Its Best 灵活可扩展
 
-The framework is built to be adaptable to your unique requirements. Integrate your custom datasets with ease using the provided utilities. Furthermore, adding new models for specialized time series tasks is as simple as defining a `backbone: nn.Module` and a `head: nn.Module`, without compromising any of the framework's built-in functionalities.
+The framework is built to be adaptable to your unique requirements. Integrate your custom datasets with ease using the provided utilities. Furthermore, adding new models for specialized time series tasks is as simple as defining a `backbone: nn.Module`, without compromising any of the framework's built-in functionalities.
 
 ### Based on Lightning
 
@@ -56,7 +56,7 @@ If your Python version is lower than 3.12.0, update it with the following comman
 
 ### Step 2: Dive Into Your First Experiment
 
-To familiarize yourself with the framework, follow the steps outlined in the [example.ipynb](example.ipynb) Jupyter notebook.
+To familiarize yourself with the framework, follow the steps outlined in the tutorial folder.
 
 ## Customization
 

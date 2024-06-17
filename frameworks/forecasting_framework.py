@@ -7,7 +7,7 @@ from typing import Mapping, Iterable
 from torch import Tensor
 from .framework_base import FrameworkBase
 from .callbacks.forecasting_callbacks import ComputeMetricsAndLog
-from .callbacks.autoencoding_callbacks import ViAndLog2Tensorboard
+from .callbacks.autoencoding_callbacks import ViAndLog
 
 
 class ForecastingFramework(FrameworkBase):
@@ -43,7 +43,7 @@ class ForecastingFramework(FrameworkBase):
     def _task_callbacks(self) -> list[L.Callback]:
         return [
             ComputeMetricsAndLog(),
-            ViAndLog2Tensorboard(
+            ViAndLog(
                 every_n_epochs=self.every_n_epochs,
                 fig_size=self.fig_size,
             ),  # 把autoencoding的callback借过来

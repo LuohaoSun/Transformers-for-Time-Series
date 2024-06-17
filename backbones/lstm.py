@@ -1,11 +1,8 @@
-from matplotlib.pyplot import step
 import torch
 import torch.nn as nn
 import lightning as L
-from .components import positional_embedding as PE
 from .components import token_embedding as TE
 from torch import Tensor
-from typing import Any, Dict, Iterable, Mapping, Union, Callable
 
 
 class LSTMBackbone(L.LightningModule):

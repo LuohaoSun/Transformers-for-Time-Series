@@ -1,6 +1,7 @@
 import lightning as L
 import subprocess
 from typing import Mapping
+from sklearn import metrics
 from torch import Tensor
 from lightning.pytorch.callbacks import (
     ModelCheckpoint,
@@ -175,7 +176,9 @@ Use `self.save_hyperparameters()` in the __init__() method of your model to log 
         print(msg)
 
     def hyperparameters_logged(self, logger, hparam_dict, best_val_loss):
-        logger.log_hyperparams(hparam_dict, {"Best Validation Loss": best_val_loss})
+        logger.log_hyperparams(
+            hparam_dict, metrics={"Best Validation Loss": best_val_loss}
+        )
         msg = f"""
 =======================================
 =       Hyperparameters Logged.       =

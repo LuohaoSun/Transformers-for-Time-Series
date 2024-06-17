@@ -11,7 +11,7 @@ from typing import Mapping, Iterable, Tuple, Callable
 from torch import Tensor
 
 from .framework_base import FrameworkBase
-from .callbacks.autoencoding_callbacks import ViAndLog2Tensorboard
+from .callbacks.autoencoding_callbacks import ViAndLog
 
 
 class RandomMasker(L.LightningModule):
@@ -172,7 +172,7 @@ class AutoEncodingFramework(FrameworkBase):
 
     @property
     def _task_callbacks(self):
-        return [ViAndLog2Tensorboard(self.every_n_epochs, self.figsize)]
+        return [ViAndLog(self.every_n_epochs, self.figsize)]
 
     def encode(self, x: Tensor) -> Tensor:
         """
