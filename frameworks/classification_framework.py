@@ -27,59 +27,38 @@ class ClassificationFramework(FrameworkBase):
         num_classes: int,
     ) -> None:
         super().__init__()
-        # TODO: remove arg hidden_features
-        # 必须使用logger=False，否则会报错.
         self.out_seq_len = out_seq_len
         self.num_classes = num_classes
-        self.hparams.update(
-            {
-                "backbone": backbone,
-                "backbone_out_features": backbone_out_features,
-                "out_seq_len": out_seq_len,
-                "num_classes": num_classes,
-            }
-        )   # use this instead of save_hyperparameters() to avoid warning
+        self.save_hyperparameters(logger=False)
 
         self.backbone = backbone
+        self.neck = nn.Identity()
         self.head = nn.Linear(backbone_out_features, num_classes)
 
-    @property
-    def _task_callbacks(self) -> list[L.Callback]:
+    def get_task_callbacks(self) -> list[L.Callback]:
         return [ComputeAndLogMetrics2Tensorboard(self.num_classes)]
 
-    @property
-    def _loss(self) -> Callable:
-        return nn.CrossEntropyLoss()
+    def loss(self, y_hat: Tensor, y: Tensor) -> Tensor:
+        return F.cross_entropy(y_hat, y)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def framework_forward(
+        self, x: Tensor, backbone: nn.Module, neck: nn.Module, head: nn.Module
+    ) -> Tensor:
         """
         x: (batch_size, in_seq_len, in_features)
         return: (batch_size, out_seq_len, num_classes)
         """
         assert len(x.shape) == 3, f"Expected 3D input, got {x.shape}"
         out_seq_len = self.out_seq_len if self.out_seq_len > 0 else x.size(1)
-        x = self.backbone(x)[:, -out_seq_len, :]
-        x = self.head(x)
+        x = backbone(x)[:, -out_seq_len, :]
+        x = head(x)
         return x
 
-    def training_step(
-        self, batch: Iterable[Tensor], batch_idx: int
+    def model_step(
+        self, batch: Iterable[Tensor], loss_fn: Callable[..., Any]
     ) -> Mapping[str, Tensor]:
-
         x, y = batch
         y_hat = self.forward(x)
-        loss = self.loss(y_hat, y)
+        loss = loss_fn(y_hat, y)
 
         return {"loss": loss, "y": y, "y_hat": y_hat}
-
-    def validation_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]:
-
-        return self.training_step(batch, batch_idx)
-
-    def test_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]:
-
-        return self.training_step(batch, batch_idx)

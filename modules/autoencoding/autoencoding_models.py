@@ -46,7 +46,7 @@ class MLPAutoEncoder(AutoEncodingFramework):
             backbone=backbone,
             head=head,
             # logging params
-            every_n_epochs=every_n_epochs,
+            vi_every_n_epochs=every_n_epochs,
             figsize=figsize,
             dpi=dpi,
             # training params
@@ -131,7 +131,7 @@ class PatchTSTAutoEncodingModel(AutoEncodingFramework):
             backbone=backbone,
             head=head,
             # logging params
-            every_n_epochs=every_n_epochs,
+            vi_every_n_epochs=every_n_epochs,
             figsize=figsize,
             dpi=dpi,
             # training params

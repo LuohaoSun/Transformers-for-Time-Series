@@ -1,14 +1,14 @@
 # Author: Sun LuoHao
 # All rights reserved
 
-from ast import Call
-from functools import partial
 import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from typing import Mapping, Iterable, Tuple, Callable
+from typing import Mapping, Iterable, Tuple, Callable, Optional
 from torch import Tensor
+
+from frameworks.utils import get_loss_fn
 
 from .framework_base import FrameworkBase
 from .callbacks.autoencoding_callbacks import ViAndLog
@@ -121,10 +121,12 @@ class AutoEncodingFramework(FrameworkBase):
         out_features: int,
         mask_ratio: float = 0,
         mask_length: int = 1,
-        loss_type: str = "hybrid",  # 'full', 'masked', 'hybrid'
+        loss_type: str = "full",  # 'full', 'masked', 'hybrid'
         # logging params
-        every_n_epochs: int = 1,
+        vi_every_n_epochs: int = 1,
         figsize: Tuple[int, int] = (8, 8),
+        # additional params
+        custom_head: Optional[nn.Module] = None,
     ) -> None:
         """
         Initializes the Framework class.
@@ -142,36 +144,32 @@ class AutoEncodingFramework(FrameworkBase):
                 A mask_length > 1 will implement patch masking, where the length of mask and non-masked values are both n*mask_length.
             loss_type (str, optional): The type of loss to be used. Can be 'full', 'masked', or 'hybrid'.
         """
-        assert (
-            mask_ratio > 0 or loss_type == "full"
-        ), "mask_ratio should be greater than 0 when loss_type is not 'full'"
 
         super().__init__()
         self.save_hyperparameters(logger=False)
 
         self.backbone = backbone
         self.neck = nn.Linear(backbone_out_seq_len, out_seq_len)
-        self.head = nn.Linear(backbone_out_features, out_features)
+        self.head = (
+            nn.Linear(backbone_out_features, out_features)
+            if custom_head is None
+            else custom_head
+        )
 
-        self.loss_type = loss_type
-
-        self.every_n_epochs = every_n_epochs
-        self.figsize = figsize
-
+        assert (
+            mask_ratio > 0 or loss_type == "full"
+        ), "mask_ratio should be greater than 0 when loss_type is not 'full'"
         self.random_masker = RandomMasker(mask_ratio, mask_length)
         self.masked_loss = MaskedLoss(loss_type=loss_type)
+        self.every_n_epochs = vi_every_n_epochs
+        self.figsize = figsize
 
-    @property
-    def _loss(self) -> Callable:
-        return self.partial_masked_loss
-
-    def partial_masked_loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
-        # 每次调用此函数时，都会从self.random_masker中获取最新的mask
+    def loss(self, x: Tensor, x_hat: Tensor) -> Tensor:
+        # 每次调用都会获取最新的mask
         mask = self.random_masker.mask
         return self.masked_loss(x, x_hat, mask)
 
-    @property
-    def _task_callbacks(self):
+    def get_task_callbacks(self):
         return [ViAndLog(self.every_n_epochs, self.figsize)]
 
     def encode(self, x: Tensor) -> Tensor:
@@ -189,7 +187,9 @@ class AutoEncodingFramework(FrameworkBase):
         x = self.neck(x.permute(0, 2, 1)).permute(0, 2, 1)
         return self.head(x)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def framework_forward(
+        self, x: Tensor, backbone: nn.Module, neck: nn.Module, head: nn.Module
+    ) -> Tensor:
         """
         input: (batch_size, seq_len, n_features)
         output: (batch_size, seq_len, n_features)
@@ -198,16 +198,15 @@ class AutoEncodingFramework(FrameworkBase):
         x = self.decode(x)
         return x
 
-    def training_step(
-        self, batch: Iterable[Tensor], batch_idx: int
+    def model_step(
+        self, batch: Iterable[Tensor], loss_fn: Callable
     ) -> Mapping[str, Tensor]:
-
         x, y = batch
         masked_input = self.random_masker(x)
         mask = self.random_masker.mask
 
         x_hat = self.forward(masked_input)
-        loss = self.loss(x, x_hat)
+        loss = loss_fn(x, x_hat)
 
         if self.random_masker.mask_ratio > 0:
             return {
@@ -225,15 +224,3 @@ class AutoEncodingFramework(FrameworkBase):
                 "original": x,
                 "output": x_hat,
             }
-
-    def validation_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]:
-
-        return self.training_step(batch, batch_idx)
-
-    def test_step(
-        self, batch: Iterable[Tensor], batch_idx: int
-    ) -> Mapping[str, Tensor]:
-
-        return self.training_step(batch, batch_idx)

@@ -54,3 +54,4 @@ class LSTMBackbone(L.LightningModule):
             step_out, hidden_state = self.lstm(step_in, hidden_state)
             x = torch.cat([x, step_out], dim=1)
         return x
+    

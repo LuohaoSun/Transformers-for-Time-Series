@@ -75,3 +75,7 @@ To familiarize yourself with the framework, follow the steps outlined in the tut
 ## License
 
 This project is licensed under the MIT License.
+
+## 备注
+
+此项目尚未完成，正在持续更新中。

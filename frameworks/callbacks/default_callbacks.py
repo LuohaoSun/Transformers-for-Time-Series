@@ -1,7 +1,6 @@
 import lightning as L
 import subprocess
 from typing import Mapping
-from sklearn import metrics
 from torch import Tensor
 from lightning.pytorch.callbacks import (
     ModelCheckpoint,
@@ -12,6 +11,8 @@ from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
 from lightning.pytorch.loggers import TensorBoardLogger
 import socket
+
+from frameworks import framework_base
 
 # TODO: rename to universal_functionalities.py
 
@@ -275,7 +276,7 @@ class LoadCheckpoint(L.Callback):
         best_model_path, best_val_loss, best_val_loss_epoch = ckpt_info
         msg = f"""
 =======================================
-=        Checkpoint Loaded.          =
+=         Checkpoint Loaded.          =
 =======================================
 Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
 Checkpoint saved at: {best_model_path}
