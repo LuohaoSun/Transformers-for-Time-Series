@@ -1,5 +1,6 @@
 import lightning as L
 import subprocess
+import re
 from typing import Mapping
 from torch import Tensor
 from lightning.pytorch.callbacks import (
@@ -37,8 +38,6 @@ def get_default_callbacks() -> list[L.Callback]:
 
 
 class PrintTrainingMsg(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
 
     def on_train_start(self, trainer, pl_module) -> None:
         msg = f"""
@@ -60,8 +59,6 @@ class PrintTrainingMsg(L.Callback):
 
 
 class PrintTestMsg(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
 
     def on_test_start(self, trainer, pl_module) -> None:
         msg = f"""
@@ -83,9 +80,8 @@ class PrintTestMsg(L.Callback):
 
 
 class LaunchTensorboard(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
-        self.proc: subprocess.Popen
+
+    proc: subprocess.Popen
 
     def is_port_in_use(self, port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -131,8 +127,6 @@ tensorboard PID: {self.proc.pid}
 
 
 class LogGraph(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
 
     def on_validation_batch_end(
         self,
@@ -153,46 +147,59 @@ class LogGraph(L.Callback):
 
 
 class LogHyperparams(L.Callback):
-    def __init__(self) -> None:
+    """
+    注意：
+    FrameworkBase只能对hparams属性进行修改，不应当进行任何log操作。
+    所有的log操作应当在此LogHyperparams中进行。
+    """
+
+    hparams_ignore_patterns = [
+        "backbone.*",
+        "neck.*",
+        "head.*",
+        "task.*",
+        "vi.*",
+        "loss.*",
+        "framework.*",
+        "model.*",
+        "data.*",
+        ".*dir",
+        ".*path",
+        ".*split",
+        "num_workers",
+    ]
+
+    def __init__(self):
         super().__init__()
+        self.regexes = [re.compile(pattern) for pattern in self.hparams_ignore_patterns]
 
     def on_train_end(self, trainer, pl_module) -> None:
         checkpoint_callback: ModelCheckpoint = trainer.checkpoint_callback  # type: ignore
         best_val_loss = float(checkpoint_callback.best_model_score.item())  # type: ignore
         tb_logger: TensorBoardLogger = trainer.logger  # type: ignore
-        # hparam_dict = {k: str(v) for k, v in pl_module.hparams.items()}
-        if len(pl_module.hparams) == 0:
-            self.no_hyperparameters_found()
-        else:
-            self.hyperparameters_logged(tb_logger, pl_module.hparams, best_val_loss)
-        return super().on_train_end(trainer, pl_module)
 
-    def no_hyperparameters_found(self):
-        msg = f"""
-=======================================
-=       No Hyperparameters Found.     =
-=======================================
-Use `self.save_hyperparameters()` in the __init__() method of your model to log hyperparameters.
-"""
-        print(msg)
-
-    def hyperparameters_logged(self, logger, hparam_dict, best_val_loss):
-        logger.log_hyperparams(
-            hparam_dict, metrics={"Best Validation Loss": best_val_loss}
+        hparams_to_log = self.hparams_filter(pl_module.hparams)
+        tb_logger.log_hyperparams(
+            hparams_to_log, metrics={"Best Validation Loss": best_val_loss}
         )
         msg = f"""
 =======================================
 =       Hyperparameters Logged.       =
 =======================================
-Hyperparameters:\n{hparam_dict}
+Hyperparameters:\n{hparams_to_log}
 Best validation loss: {best_val_loss}
 """
         print(msg)
 
+    def hparams_filter(self, hparams):
+        hparams_filtered = {}
+        for key, value in hparams.items():
+            if not any(regex.match(key) for regex in self.regexes):
+                hparams_filtered[key] = value
+        return hparams_filtered
+
 
 class LogLoss(L.Callback):
-    def __init__(self) -> None:
-        super().__init__()
 
     def on_train_batch_end(
         self,
@@ -241,10 +248,6 @@ class LogLoss(L.Callback):
 
 
 class LoadCheckpoint(L.Callback):
-
-    def __init__(self) -> None:
-        super().__init__()
-        return
 
     def on_train_end(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
 

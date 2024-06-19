@@ -1,11 +1,20 @@
 # Author: Sun LuoHao
 # All rights reserved
+import re
 import lightning as L
 import torch.nn as nn
 import torch
 
 from lightning.pytorch.loggers import TensorBoardLogger
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable, final
+from typing import (
+    Mapping,
+    Union,
+    Callable,
+    Dict,
+    Any,
+    Iterable,
+    final,
+)
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch import Tensor
@@ -13,6 +22,7 @@ from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
 from .callbacks.default_callbacks import get_default_callbacks
 from .utils import get_loss_fn
+from rich import print
 
 
 class FrameworkBase(L.LightningModule, ABC):
@@ -79,7 +89,6 @@ class FrameworkBase(L.LightningModule, ABC):
 
     # ==============================
     # 以下是框架公共方法：
-    @final
     def fit(
         self,
         # trainer.fit params:
@@ -114,7 +123,6 @@ class FrameworkBase(L.LightningModule, ABC):
             TODO: implement optimizer and lr_scheduler configuration.
         """
 
-        # configure framework properties:
         self._configure_framework(
             datamodule=datamodule,
             log_every_n_steps=log_every_n_steps,
@@ -127,8 +135,6 @@ class FrameworkBase(L.LightningModule, ABC):
             **trainer_kwargs,
         )
 
-        # fit the model:
-
         self._framework_trainer.fit(
             model=self,
             datamodule=datamodule,
@@ -139,7 +145,6 @@ class FrameworkBase(L.LightningModule, ABC):
 
         return self
 
-    @final
     def test(
         self,
         datamodule: L.LightningDataModule,
@@ -156,7 +161,6 @@ class FrameworkBase(L.LightningModule, ABC):
             verbose=verbose,
         )
 
-    @final
     def predict(self, x: Tensor) -> Tensor:
         return self(x)
 
@@ -189,10 +193,9 @@ class FrameworkBase(L.LightningModule, ABC):
         configuration of the following properties before training:
         - self._framework_optimizer
         - self._framework_logger
+        - self._framework_callbacks
         - self._framework_trainer
         - self._framework_loss
-        - self._framework_callbacks
-        - self._compile_model
         """
         # save hyperparameters:
         if datamodule is not None:
@@ -204,6 +207,7 @@ class FrameworkBase(L.LightningModule, ABC):
                 "max_steps": max_steps,
             }
         )
+
         self._framework_optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self._framework_logger = TensorBoardLogger(
             save_dir=".", name="lightning_logs", default_hp_metric=False
@@ -228,34 +232,6 @@ class FrameworkBase(L.LightningModule, ABC):
 
         return self  # type: ignore
 
-    @backbone.setter
-    def backbone(self, backbone: nn.Module):
-        self._framework_backbone = backbone
-
-    @backbone.getter
-    def backbone(self) -> nn.Module:
-        return self._framework_backbone
-
-    @neck.setter
-    def neck(self, neck: nn.Module):
-        self._framework_neck = neck
-
-    @neck.getter
-    def neck(self) -> nn.Module:
-        return self._framework_neck
-
-    @head.setter
-    def head(self, head: nn.Module):
-        self._framework_head = head
-
-    @head.getter
-    def head(self) -> nn.Module:
-        return self._framework_head
-
-    def _load_checkpoint(self, ckpt_path: str):
-        self = self.__class__.load_from_checkpoint(checkpoint_path=ckpt_path)
-        return self
-
     # ==============================
     # 以下是重写的父类方法：
     @final
@@ -269,9 +245,8 @@ class FrameworkBase(L.LightningModule, ABC):
         Returns:
             Tensor: The output tensor of shape (batch_size, out_seq_len, out_features).
         """
-        return self.framework_forward(x, self.backbone, self.neck, self.head)
+        return self.framework_forward(x, self._framework_backbone, self.neck, self.head)
 
-    @final
     def configure_optimizers(self) -> Dict[str, Union[Optimizer, LRScheduler]]:
         """
         Configures the optimizer for training.
@@ -282,7 +257,6 @@ class FrameworkBase(L.LightningModule, ABC):
 
         return {"optimizer": self._framework_optimizer}
 
-    @final
     def training_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
@@ -298,7 +272,6 @@ class FrameworkBase(L.LightningModule, ABC):
         """
         return self.model_step(batch, self._framework_loss)
 
-    @final
     def validation_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
@@ -314,7 +287,6 @@ class FrameworkBase(L.LightningModule, ABC):
         """
         return self.model_step(batch, self._framework_loss)
 
-    @final
     def test_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
@@ -329,3 +301,48 @@ class FrameworkBase(L.LightningModule, ABC):
             Mapping[str, Tensor]: The mapping of output tensors.
         """
         return self.model_step(batch, self._framework_loss)
+
+    # 运算符重载（用于支持abstractmethod与hparam更新）：
+    def __setattr__(self, name: str, value: Any) -> None:
+        # override __setattr__ to:
+        #   - update hyperparameters from backbone model
+        #   - use @abstractmethod which could force subclasses to implement the properties
+        #   - 兼容nn.Module的属性设置
+        if name == "backbone":
+            self._framework_backbone = value
+            if hasattr(value, "hparams") and len(value.hparams) > 0:
+                self.hparams.update(value.hparams)
+            else:
+                print(
+                    f"No hyperparameters found in the {name}. Save your hyperparameters in {name}.hparams."
+                )
+        elif name == "neck":
+            self._framework_neck = value
+        elif name == "head":
+            self._framework_head = value
+        else:
+            super().__setattr__(name, value)
+
+    def __getattribute__(self, name: str) -> Any:
+        if name == "backbone":
+            return self._framework_backbone
+        elif name == "neck":
+            return self._framework_neck
+        elif name == "head":
+            return self._framework_head
+        else:
+            return super().__getattribute__(name)
+
+    # Don't work in runtime, only for type checking. Use __setattr__ and __getattribute__ instead.
+    @backbone.setter
+    def backbone(self, backbone: nn.Module): ...
+    @neck.setter
+    def neck(self, neck: nn.Module): ...
+    @head.setter
+    def head(self, head: nn.Module): ...
+    @backbone.getter
+    def backbone(self) -> nn.Module: ...
+    @neck.getter
+    def neck(self) -> nn.Module: ...
+    @head.getter
+    def head(self) -> nn.Module: ...
