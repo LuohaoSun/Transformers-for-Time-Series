@@ -38,6 +38,7 @@ class ForecastingFramework(FrameworkBase):
         self.fig_size = vi_fig_size
 
         self.backbone = backbone
+        self.neck = nn.Identity()
         self.head = nn.Linear(backbone_out_features, out_features)
 
     def get_task_callbacks(self) -> list[L.Callback]:

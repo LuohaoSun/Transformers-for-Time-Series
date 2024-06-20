@@ -1,4 +1,3 @@
-from calendar import c
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -57,22 +56,15 @@ class ResMLPBackbone(L.LightningModule):
         self,
         in_seq_len: int,
         in_features: int,
-        res_block_eatures: list[int],
+        hidden_features: int,
+        res_block_features: int,
         num_res_blocks: int,
         activation: str | Callable[[Tensor], Tensor] = "relu",
     ) -> None:
         super().__init__()
         self.save_hyperparameters()
-        self.embed = nn.Linear(in_seq_len * in_features, res_block_eatures[0])
-        res_block = nn.Sequential(
-            *[
-                nn.Sequential(
-                    nn.Linear(res_block_eatures[i], res_block_eatures[i + 1]),
-                    get_activation_fn(activation),
-                )
-                for i in range(len(res_block_eatures) - 1)
-            ]
-        )
+        self.embed = nn.Linear(in_seq_len * in_features, hidden_features)
+        res_block = ResMLPBlock(hidden_features, res_block_features, activation)
         self.layers = nn.Sequential(
             *[copy.deepcopy(res_block) for _ in range(num_res_blocks)]
         )
@@ -84,6 +76,23 @@ class ResMLPBackbone(L.LightningModule):
         """
         x = x.flatten(1)
         x = self.embed(x)
-        for layer in self.layers:
-            x = x + layer(x)
+        x = self.layers(x)
         return x.unsqueeze(1)
+
+
+class ResMLPBlock(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        hidden_features: int,
+        activation: str | Callable[[Tensor], Tensor] = "relu",
+    ):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(in_features, hidden_features),
+            get_activation_fn(activation),
+            nn.Linear(hidden_features, in_features),
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        return x + self.net(x)

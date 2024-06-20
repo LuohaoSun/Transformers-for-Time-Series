@@ -11,11 +11,8 @@ from lightning.pytorch.callbacks import (
 from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
 from lightning.pytorch.loggers import TensorBoardLogger
+from utils import print_dict
 import socket
-
-from frameworks import framework_base
-
-# TODO: rename to universal_functionalities.py
 
 __all__ = ["get_default_callbacks"]
 
@@ -186,10 +183,10 @@ class LogHyperparams(L.Callback):
 =======================================
 =       Hyperparameters Logged.       =
 =======================================
-Hyperparameters:\n{hparams_to_log}
 Best validation loss: {best_val_loss}
-"""
+Hyperparameters:"""
         print(msg)
+        print_dict(hparams_to_log, header=("Hyperparameter", "Value"))
 
     def hparams_filter(self, hparams):
         hparams_filtered = {}

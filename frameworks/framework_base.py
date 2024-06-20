@@ -1,6 +1,5 @@
 # Author: Sun LuoHao
 # All rights reserved
-import re
 import lightning as L
 import torch.nn as nn
 import torch
@@ -23,6 +22,12 @@ from abc import ABC, abstractmethod
 from .callbacks.default_callbacks import get_default_callbacks
 from .utils import get_loss_fn
 from rich import print
+
+"""
+TODO:
+1. early stopping support
+2. formatted hyperparameters printing
+"""
 
 
 class FrameworkBase(L.LightningModule, ABC):
