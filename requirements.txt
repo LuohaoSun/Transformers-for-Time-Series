@@ -25,3 +25,4 @@ matplotlib      # for plotting
 numpy
 pandas
 ipywidgets      # for rich interactive visualizations in notebooks
+psutil          # for monitoring system resources during training

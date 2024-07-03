@@ -12,7 +12,7 @@ from lightning.pytorch.callbacks import (
 from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
 from lightning.pytorch.loggers import TensorBoardLogger
-from utils import print_dict
+from utils import print_dict, find_process_by_port
 import socket
 
 __all__ = ["get_default_callbacks"]
@@ -82,22 +82,12 @@ class LaunchTensorboard(L.Callback):
 
     proc: subprocess.Popen
 
-    def is_port_in_use(self, port):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("localhost", port))
-                return False
-            except OSError:
-                return True
-
-    def on_fit_start(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
-        return super().on_fit_start(trainer, pl_module)
-
     def on_train_start(self, trainer, pl_module) -> None:
 
-        if self.is_port_in_use(6006):
-            msg = "Port 6006 already in use, tensorboard not activated."
+        if (ps_using_6006 := find_process_by_port(6006)) is not None:
+            msg = f"PID {ps_using_6006.pid} is using port 6006. No new tensorboard activated."
         else:
+            # FIXME: hard-coded logdir
             self.proc = subprocess.Popen(
                 ["tensorboard", "--logdir=lightning_logs"],
                 stdout=subprocess.PIPE,
@@ -113,16 +103,17 @@ tensorboard PID: {self.proc.pid}
         print(msg)
         return super().on_train_start(trainer, pl_module)
 
-    def on_train_end(self, trainer, pl_module) -> None:
-        if hasattr(self, "proc"):
-            self.proc.terminate()
-            msg = f"""
-=======================================
-=      Tensorboard Deactivated.       =
-=======================================
-"""
-            print(msg)
-        return
+
+#     def on_train_end(self, trainer, pl_module) -> None:
+#         if hasattr(self, "proc"):
+#             self.proc.terminate()
+#             msg = f"""
+# =======================================
+# =      Tensorboard Deactivated.       =
+# =======================================
+# """
+#             print(msg)
+#         return
 
 
 class LogGraph(L.Callback):
