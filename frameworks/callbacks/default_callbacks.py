@@ -7,6 +7,7 @@ from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     RichModelSummary,
     RichProgressBar,
+    EarlyStopping,
 )
 from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -17,12 +18,13 @@ import socket
 __all__ = ["get_default_callbacks"]
 
 
-def get_default_callbacks() -> list[L.Callback]:
+def get_default_callbacks(early_stopping_patience: int) -> list[L.Callback]:
     return [
         # lightning built-in callbacks
         ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
         RichModelSummary(max_depth=3),
         RichProgressBar(),
+        EarlyStopping(monitor="val_loss", patience=early_stopping_patience),
         # framework default callbacks
         PrintTrainingMsg(),
         PrintTestMsg(),

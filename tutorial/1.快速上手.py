@@ -74,7 +74,8 @@ if __name__ == "__main__":
     **以下是上述步骤的详细说明**
 
     1. 选择数据集。
-        - 本项目的数据集都使用`LightningDataModule`加载。一个`LightningDataModule`实例包括了训练、验证、测试所需的所有数据加载器，无需重复分别实现。
+        - 本项目的数据集都使用`LightningDataModule`加载。（当然，framework也兼容dataloader）
+        - 一个`LightningDataModule`实例包括了训练、验证、测试所需的所有数据加载器，无需重复分别实现。
         - 本项目自带了一些测试数据集，位于`data/`路径下。
         - 使用项目自带的工具可以方便地将原始数据转换`LightningDataModule`，详见更换数据集的教程。
         
