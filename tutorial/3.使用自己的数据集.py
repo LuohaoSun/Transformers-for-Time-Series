@@ -5,6 +5,7 @@ sys.path.append("..")
 
 
 def main():
+    
     # 在【快速上手】中，我们已经介绍了轴承数据集：
     from data.bearing_fault_prediction import FaultPredictionDataModule
 
@@ -36,3 +37,14 @@ def main():
         train_val_test_split=(0.7, 0.1, 0.2),
         stride=1,
     )
+
+    # 然后你可以使用这个datamodule进行训练和测试，如：
+    # framework.fit(datamodule3, max_epochs=10, lr=1e-3)
+    # framework.test(datamodule3)
+
+    # 此外，framework同时兼容Dataloader，你可以使用自己的dataloader替代datamodule，如：
+    # dataloader1, dataloader2 = ...
+    # framework.fit(train_dataloaders=dataloader1, val_dataloaders=dataloader2)
+    # framework.test(dataloader=dataloader)
+    
+    # TODO: add training and testing code here
