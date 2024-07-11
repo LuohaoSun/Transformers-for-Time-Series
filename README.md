@@ -40,13 +40,13 @@ pip install -r requirements.txt
 # pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-Make sure you have Python version **>= 3.12**. You can check your Python version by running:
+Make sure you have Python version **>= 3.11**. You can check your Python version by running:
 
 ```shell
 python --version
 ```
 
-If your Python version is lower than 3.12.0, update it with the following command:
+If your Python version is lower than 3.11.0, update it with the following command:
 
 ```shell
 # pip install python=3.12

@@ -207,6 +207,10 @@ class FrameworkBase(L.LightningModule, ABC):
             **trainer_kwargs,
         )
 
+        if max_epochs == 0 or max_steps == 0:
+            # skip training
+            return self
+
         self._framework_trainer.fit(
             model=self,
             datamodule=datamodule,
@@ -224,6 +228,10 @@ class FrameworkBase(L.LightningModule, ABC):
         ckpt_path: str | None = None,
         verbose: bool = True,
     ) -> None:
+        if not hasattr(self, "_framework_trainer") or self._framework_trainer is None:
+            raise RuntimeError(
+                "Trainer is not initialized. Please call fit() before test()."
+            )
 
         self._framework_trainer.test(
             self,

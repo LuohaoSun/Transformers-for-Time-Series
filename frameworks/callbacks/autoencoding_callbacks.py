@@ -29,11 +29,21 @@ class ViAndLog(L.Callback):
     ) -> None:
         if trainer.current_epoch % self.every_n_epochs != 0 or batch_idx != 0:
             return
-        series_dict = {k: v for k, v in outputs.items() if k != "loss"}
-        img = SeriesPlotter.plot_series(series_dict)
-
         tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
-        tb_writer.add_figure(f"epoch {trainer.current_epoch}", img)
+
+        series_dict = {k: v for k, v in outputs.items() if k != "loss"}
+
+        img_all_series = SeriesPlotter.plot_series(series_dict)
+        tb_writer.add_figure(
+            f"all_series", img_all_series, global_step=trainer.global_step
+        )
+
+        imgs_single_series = [
+            SeriesPlotter.plot_series({k: v}) for k, v in series_dict.items()
+        ]
+        for img, (k, v) in zip(imgs_single_series, series_dict.items()):
+            tb_writer.add_figure(f"{k}", img, global_step=trainer.global_step)
+
         return super().on_validation_batch_end(
             trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
         )

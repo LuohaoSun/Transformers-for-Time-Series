@@ -28,6 +28,9 @@ class ForecastingFramework(FrameworkBase):
         # visualization params
         vi_every_n_epochs: int = 20,
         vi_fig_size: tuple[int, int] = (10, 5),
+        # custom model components
+        custom_neck: nn.Module | None = None,
+        custom_head: nn.Module | None = None,
     ) -> None:
         super().__init__()
         self.save_hyperparameters(logger=False)
@@ -38,8 +41,12 @@ class ForecastingFramework(FrameworkBase):
         self.fig_size = vi_fig_size
 
         self.backbone = backbone
-        self.neck = nn.Identity()
-        self.head = nn.Linear(backbone_out_features, out_features)
+        self.neck = nn.Identity() if custom_neck is None else custom_neck
+        self.head = (
+            nn.Linear(backbone_out_features, out_features)
+            if custom_head is None
+            else custom_head
+        )
 
     def get_task_callbacks(self) -> list[L.Callback]:
         return [

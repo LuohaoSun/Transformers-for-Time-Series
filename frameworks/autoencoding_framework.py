@@ -54,7 +54,7 @@ class RandomMasker(L.LightningModule):
             < self.mask_ratio
         )
         mask = mask.repeat_interleave(self.mask_length, dim=1)
-        mask = mask.unsqueeze(dim=-1).to(self.device)
+        mask = mask.to(self.device).unsqueeze(dim=-1).repeat(1, 1, tensor.shape[-1])
         return mask
 
     def mask_tensor(self, tensor: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor]:
