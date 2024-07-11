@@ -5,7 +5,8 @@ def main():
 
     sys.path.append(".")
     sys.path.append("..")
-    os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+    os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = '1'
 
     # 使用metroBJ数据集测试各个模型的序列预测性能
     import torch
@@ -21,14 +22,14 @@ def main():
     datamodule = BJInflowDataModule(
         input_length=INPUT_LENGTH,
         output_length=OUTPUT_LENGTH,
-        batch_size=32,
-        train_val_test_split=(0.7, 0.2, 0.1),
+        batch_size=1,
+        train_val_test_split=(0.7, 0.25, 0.05), # chronos将(b, l, d) 转换为(bd, l)来处理，非常消耗资源，只能把testset尽量调小。
     )
 
     # 2. 选择骨干模型
     from pretrained import Chronos
 
-    DEVICE = "cuda" #if torch.cuda.is_available() else "cpu"
+    DEVICE = "mps"  # "cuda" #if torch.cuda.is_available() else "cpu"
 
     chronos_backbone = Chronos(
         size="tiny",
