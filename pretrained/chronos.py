@@ -34,6 +34,7 @@ class Chronos(PretrainedBase):
         device_map="cpu",  # use "cpu" for CPU inference, "cuda" for nVidia and "mps" for Apple Silicon
     ) -> None:
         """
+        NOTE: original Chronos model only supports CPU inference. You can modify the source code to support GPU inference.
         Model	            Parameters	Based on            d_model
         chronos-t5-tiny	    8M	        t5-efficient-tiny
         chronos-t5-mini	    20M	        t5-efficient-mini
