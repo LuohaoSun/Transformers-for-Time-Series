@@ -47,3 +47,16 @@ class ViAndLog(L.Callback):
         return super().on_validation_batch_end(
             trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
         )
+
+    def on_test_batch_end(
+        self,
+        trainer: L.Trainer,
+        pl_module: L.LightningModule,
+        outputs: Mapping[str, Tensor],
+        batch: Iterable[Tensor],
+        batch_idx: int,
+        dataloader_idx: int = 0,
+    ) -> None:
+        return self.on_validation_batch_end(
+            trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+        )

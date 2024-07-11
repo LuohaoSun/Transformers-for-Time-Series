@@ -5,13 +5,14 @@ def main():
 
     sys.path.append(".")
     sys.path.append("..")
+    os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
     # 使用metroBJ数据集测试各个模型的序列预测性能
     import torch
     import torch.nn as nn
 
     # 1. 读取数据
-    INPUT_LENGTH = 24  # 输入序列长度
+    INPUT_LENGTH = 48  # 输入序列长度
     OUTPUT_LENGTH = 12  # 输出序列长度
     NUM_STATIONS = 276  # 地铁站点数（特征数）
 
@@ -20,14 +21,14 @@ def main():
     datamodule = BJInflowDataModule(
         input_length=INPUT_LENGTH,
         output_length=OUTPUT_LENGTH,
-        batch_size=64,
+        batch_size=32,
         train_val_test_split=(0.7, 0.2, 0.1),
     )
 
     # 2. 选择骨干模型
     from pretrained import Chronos
 
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    DEVICE = "cuda" #if torch.cuda.is_available() else "cpu"
 
     chronos_backbone = Chronos(
         size="tiny",

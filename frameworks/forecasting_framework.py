@@ -62,6 +62,9 @@ class ForecastingFramework(FrameworkBase):
         input: (b, l_out, d_out)
         target: (b, l_out, d_out)
         """
+        assert (
+            input.device == target.device
+        ), f"input and target should be on the same device, got {input.device} and {target.device}"
         return F.mse_loss(input, target)
 
     def framework_forward(
