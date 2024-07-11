@@ -50,13 +50,13 @@ class Chronos(PretrainedBase):
             torch_dtype=torch.bfloat16,
         )
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor, num_samples: int = 20) -> Tensor:
         """
         x: Tensor of shape (batch_size, seq_len, n_features)
         returns: Tensor of shape (batch_size, out_seq_len, n_features)
         """
         if self.task == "forecasting":
-            return self._chronos_forecast_3d(x, self.out_seq_len)
+            return self._chronos_forecast_3d(x, self.out_seq_len, num_samples)
         elif self.task == "embedding":
             return self._chronos_embed_3d(x)[:, -self.out_seq_len :, :]
         else:
@@ -76,7 +76,7 @@ class Chronos(PretrainedBase):
         x = x.reshape(batch_size, n_features, seq_len).transpose(1, 2)
         return x
 
-    def _chronos_forecast_3d(self, x: Tensor, out_seq_len) -> Tensor:
+    def _chronos_forecast_3d(self, x: Tensor, out_seq_len, num_samples) -> Tensor:
         """
         Forecasting using the Chronos model.
         NOTE: The vanilla Chronos only supports (b, l).
@@ -87,7 +87,7 @@ class Chronos(PretrainedBase):
         """
         batch_size, seq_len, n_features = x.shape
         x = x.transpose(1, 2).reshape(batch_size * n_features, seq_len)
-        x = self._chronos_forecast_2d(x, out_seq_len)
+        x = self._chronos_forecast_2d(x, out_seq_len, num_samples)
         x = x.reshape(batch_size, n_features, out_seq_len).transpose(1, 2)
         return x
 
@@ -99,10 +99,10 @@ class Chronos(PretrainedBase):
         TODO: the embeddings output is moved to cpu by default. see {self.chronos.embed}
         """
         embeddings, tokenizer_state = self.chronos.embed(x)
-        return embeddings
+        return embeddings.to(x.device)
 
     def _chronos_forecast_2d(
-        self, x: Tensor, prediction_length: int, **kwargs
+        self, x: Tensor, prediction_length: int, num_samples, **kwargs
     ) -> Tensor:
         """
         Forecasting using the Chronos model.
@@ -111,6 +111,8 @@ class Chronos(PretrainedBase):
         returns: Tensor of shape (batch_size, seq_len)
         """
         # (batch_size, seq_len) -> (batch_size, num_samples, seq_len)
-        forecast = self.chronos.predict(x, prediction_length, **kwargs, num_samples=1)
+        forecast = self.chronos.predict(
+            x, prediction_length, num_samples=num_samples, **kwargs
+        )
         forecast = forecast.mean(dim=1)
-        return forecast
+        return forecast.to(x.device)
