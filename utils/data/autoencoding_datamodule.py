@@ -1,105 +1,117 @@
+import os
 from typing import Tuple
+import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch import Tensor
+import torch.utils
+from torch.utils.data import Dataset, DataLoader, random_split
 from tqdm import tqdm
 import lightning as L
-import pandas as pd
+from utils.data.sliding_window_dataset import SlidingWindowDataset
 
 
 class AutoEncodingDataModule(L.LightningDataModule):
     __doc__ = f"""
-    __init__: load a csv file and convert it to a LightningDataModule.
     from_datasets: load a list of datasets and convert it to a LightningDataModule. See:
     > {L.LightningDataModule.from_datasets.__doc__}
-
     """
 
     def __init__(
         self,
-        csv_file_path: str,
-        input_length: int,
+        data_path: str,
+        windows_size: int,
+        stride: int,
+        ignore_last_cols: int,
         batch_size: int,
         train_val_test_split: Tuple[float, float, float] = (0.7, 0.2, 0.1),
         num_workers: int = 1,
-        ignore_last_cols: int = 0,
     ) -> None:
+        """
+        Initializes the AutoencodingDataModule.
+
+        Args:
+            path (str): The path to the data. Could be a .csv file or a directory containing multiple .csv files.
+            windows_size (int): The size of the sliding window.
+            stride (int): The stride of the sliding window.
+            ignore_last_cols (int): The number of columns to ignore from the end of each sample.
+            batch_size (int): The batch size for training and validation dataloaders.
+            train_val_test_split (Tuple[float, float, float], optional): The split ratio for train, validation, and test sets. Defaults to (0.7, 0.2, 0.1).
+            num_workers (int, optional): The number of workers for data loading. Defaults to 1.
+        """
         super().__init__()
-        self.file_path = csv_file_path
-        self.input_length = input_length
+        self.save_hyperparameters()
+        self.data_path = data_path
+        self.windows_size = windows_size
+        self.stride = stride
+        self.ignore_last_cols = ignore_last_cols
         self.batch_size = batch_size
         self.train_val_test_split = train_val_test_split
         self.num_workers = num_workers
 
     def prepare_data(self) -> None:
-
-
-        return
+        self.dataset = AutoEncodingDataset(
+            self.data_path, self.windows_size, self.stride, self.ignore_last_cols
+        )
 
     def setup(self, stage: str | None = None):
         # make assignments here (val/train/test split)
         # called on every process in DDP
-        assert sum(self.train_val_test_split) - 1 < 1e-6
         assert stage in (None, "fit", "validate", "test", "predict")
-        pass
+        if not hasattr(self, "train_set"):
+            self.train_set, self.val_set, self.test_set = random_split(
+                self.dataset, self.train_val_test_split
+            )
 
     def train_dataloader(self):
-        raise NotImplementedError
-        pass
+        return DataLoader(
+            self.train_set,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+        )
 
     def val_dataloader(self):
-        pass
+        return DataLoader(
+            self.val_set,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
 
     def test_dataloader(self):
-        pass
-
-    @classmethod
-    def from_directory(
-        cls,
-        directory: str,
-        input_length: int,
-        batch_size: int,
-        train_val_test_split: Tuple[float, float, float] = (0.7, 0.2, 0.1),
-        num_workers: int = 1,
-        ignore_last_cols: int = 0,
-    ) -> "AutoEncodingDataModule":
-        """
-        read a directory of multipl csv files and convert it to a LightningDataModule.
-        """
-        ...
+        return DataLoader(
+            self.test_set,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
 
 
 class AutoEncodingDataset(Dataset):
+
     def __init__(
-        self,
-        data: pd.DataFrame,
-        input_length: int,
-        stride: int,
-        ignore_last_cols: int,
-    ):
-        self.data = data
-        self.input_length = input_length
+        self, path: str, windows_size: int, stride: int, ignore_last_cols: int
+    ) -> None:
+        super().__init__()
+        if os.path.isfile(path):
+            self.sliding_window_dataset = SlidingWindowDataset.from_csv(
+                path, windows_size, stride
+            )
+        elif os.path.isdir(path):
+            self.sliding_window_dataset = SlidingWindowDataset.from_directory(
+                path, windows_size, stride
+            )
+        else:
+            raise ValueError(f"Invalid path: {path}")
+
         self.ignore_last_cols = ignore_last_cols
 
-        self.samples = []
-
-        for i in tqdm(range(0, len(data) - input_length + 1, stride)):
-            x = data.iloc[i : i + input_length]
-            x = torch.tensor(x.values, dtype=torch.float32)
-            self.samples.append((x, None))
-
     def __len__(self):
-        return len(self.samples)
+        return len(self.sliding_window_dataset)
 
-    def __getitem__(self, index):
-        return self.samples[index]
+    def __getitem__(self, index) -> Tuple[Tensor, Tensor]:
+        sequence = self.sliding_window_dataset[index]
+        if self.ignore_last_cols > 0:
+            sequence = sequence[:, :-self.ignore_last_cols]
+        return sequence, sequence
 
-    @classmethod
-    def from_csv(
-        cls,
-        csv_file_path: str,
-        input_length: int,
-        stride: int,
-        ignore_last_cols: int,
-    ) -> "AutoEncodingDataset":
-        data = pd.read_csv(csv_file_path)
-        return cls(data, input_length, stride, ignore_last_cols)

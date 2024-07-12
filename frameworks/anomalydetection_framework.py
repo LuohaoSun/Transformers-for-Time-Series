@@ -161,6 +161,7 @@ class AnomalyDetectionFramework(FrameworkBase):
     def model_step(
         self, batch: Iterable[Tensor], loss_fn: Callable
     ) -> Mapping[str, Tensor]:
+        # TODO: add callbacks for anomaly detection metrics
         x, y = batch
 
         x_hat = self.forward(x)

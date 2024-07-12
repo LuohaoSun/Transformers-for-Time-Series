@@ -36,7 +36,7 @@ class SlidingWindowDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index) -> Tensor:
-        return super().__getitem__(index)
+        return self.samples[index]
 
     @classmethod
     def from_csv(
@@ -45,7 +45,7 @@ class SlidingWindowDataset(Dataset):
         window_size: int,
         stride: int,
         **pd_read_csv_kwargs,
-    ) -> Dataset:
+    ) -> "SlidingWindowDataset":
         """Create a dataset from a CSV file.
 
         Args:
@@ -67,7 +67,7 @@ class SlidingWindowDataset(Dataset):
         window_size: int,
         stride: int,
         **pd_read_csv_kwargs,
-    ) -> Dataset:
+    ) -> ConcatDataset:
         """
         Creates a dataset by reading multiple CSV files from a directory and applying sliding window transformation.
 
