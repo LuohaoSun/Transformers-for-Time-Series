@@ -48,7 +48,7 @@ def main():
     )
 
     # 第4步：训练和测试。此处你需要指定优化算法的参数，主要是学习率，训练代数。对于更复杂的情况，还包括优化算法、损失函数和学习率调度器的选择。
-    framework.fit(datamodule, max_epochs=100, lr=1e-3)
+    framework.fit(datamodule, max_epochs=1, lr=1e-3)
     framework.test(datamodule)
 
 

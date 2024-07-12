@@ -1,4 +1,4 @@
-from utils.datamodule import ForecastingDataModule
+from utils.data import ForecastingDataModule
 import torch
 
 

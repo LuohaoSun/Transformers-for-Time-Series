@@ -30,34 +30,77 @@ class Chronos(PretrainedBase):
         self,
         task: str,  # "forecasting" or "embedding"
         out_seq_len: int = 1,
+        num_samples: int = 1,
         size: str = "small",  # "tiny", "mini", "small", "base", "large"
         device_map="cpu",  # use "cpu" for CPU inference, "cuda" for nVidia and "mps" for Apple Silicon
+        temperature: Optional[float] = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
+        limit_prediction_length: bool = True,
     ) -> None:
         """
-        NOTE: original Chronos model only supports CPU inference. You can modify the source code to support GPU inference.
-        Model	            Parameters	Based on            d_model
-        chronos-t5-tiny	    8M	        t5-efficient-tiny
-        chronos-t5-mini	    20M	        t5-efficient-mini
-        chronos-t5-small	46M	        t5-efficient-small
-        chronos-t5-base	    200M	    t5-efficient-base
-        chronos-t5-large	710M	    t5-efficient-large
+        NOTE: original Chronos model only supports CPU inference.
+        You can modify the source code to support GPU inference.
+        A bigger num_samples leads to higher precision but also increases memory usage. 
+        Set a smaller value to reduce memory usage.
+        
+        Model	            Parameters	Based on            Storage
+        chronos-t5-tiny	    8M	        t5-efficient-tiny   30MB
+        chronos-t5-mini	    20M	        t5-efficient-mini   80MB
+        chronos-t5-small	46M	        t5-efficient-small  200MB
+        chronos-t5-base	    200M	    t5-efficient-base   800MB
+        chronos-t5-large	710M	    t5-efficient-large  2.8GB
         """
         super().__init__()
+
         self.task = task
         self.out_seq_len = out_seq_len
+        self.num_samples = num_samples
+        self.temperature = temperature
+        self.top_k = top_k
+        self.top_p = top_p
+        self.limit_prediction_length = limit_prediction_length
+
         self.chronos = ChronosPipeline.from_pretrained(
             f"amazon/chronos-t5-{size}",
             device_map=device_map,  # use "cpu" for CPU inference and "mps" for Apple Silicon
             torch_dtype=torch.bfloat16,
         )
 
-    def forward(self, x: Tensor, num_samples: int = 20) -> Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        out_seq_len: int = 0,
+        num_samples: int = 1,
+        temperature: Optional[float] = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
+        limit_prediction_length: bool = True,
+    ) -> torch.Tensor:
         """
         x: Tensor of shape (batch_size, seq_len, n_features)
         returns: Tensor of shape (batch_size, out_seq_len, n_features)
         """
+        num_samples = num_samples if num_samples > 0 else self.num_samples
+        out_seq_len = out_seq_len if out_seq_len > 0 else self.out_seq_len
+        temperature = temperature if temperature is not None else self.temperature
+        top_k = top_k if top_k is not None else self.top_k
+        top_p = top_p if top_p is not None else self.top_p
+        limit_prediction_length = (
+            limit_prediction_length
+            if limit_prediction_length is not None
+            else self.limit_prediction_length
+        )
         if self.task == "forecasting":
-            return self._chronos_forecast_3d(x, self.out_seq_len, num_samples)
+            return self._chronos_forecast_3d(
+                x,
+                self.out_seq_len,
+                num_samples,
+                temperature,
+                top_k,
+                top_p,
+                limit_prediction_length,
+            )
         elif self.task == "embedding":
             return self._chronos_embed_3d(x)[:, -self.out_seq_len :, :]
         else:
@@ -77,7 +120,16 @@ class Chronos(PretrainedBase):
         x = x.reshape(batch_size, n_features, seq_len).transpose(1, 2)
         return x
 
-    def _chronos_forecast_3d(self, x: Tensor, out_seq_len, num_samples) -> Tensor:
+    def _chronos_forecast_3d(
+        self,
+        x: torch.Tensor,
+        prediction_length: int,
+        num_samples: Optional[int] = None,
+        temperature: Optional[float] = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
+        limit_prediction_length: bool = True,
+    ) -> torch.Tensor:
         """
         Forecasting using the Chronos model.
         NOTE: The vanilla Chronos only supports (b, l).
@@ -88,8 +140,16 @@ class Chronos(PretrainedBase):
         """
         batch_size, seq_len, n_features = x.shape
         x = x.transpose(1, 2).reshape(batch_size * n_features, seq_len)
-        x = self._chronos_forecast_2d(x, out_seq_len, num_samples)
-        x = x.reshape(batch_size, n_features, out_seq_len).transpose(1, 2)
+        x = self._chronos_forecast_2d(
+            x,
+            prediction_length,
+            num_samples,
+            temperature,
+            top_k,
+            top_p,
+            limit_prediction_length,
+        )
+        x = x.reshape(batch_size, n_features, prediction_length).transpose(1, 2)
         return x
 
     def _chronos_embed_2d(self, x: Tensor) -> Tensor:
@@ -103,8 +163,15 @@ class Chronos(PretrainedBase):
         return embeddings.to(x.device)
 
     def _chronos_forecast_2d(
-        self, x: Tensor, prediction_length: int, num_samples, **kwargs
-    ) -> Tensor:
+        self,
+        x: torch.Tensor,
+        prediction_length: Optional[int] = None,
+        num_samples: Optional[int] = None,
+        temperature: Optional[float] = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
+        limit_prediction_length: bool = True,
+    ) -> torch.Tensor:
         """
         Forecasting using the Chronos model.
         Chronos uses sampling to get results from tokens.
@@ -113,7 +180,13 @@ class Chronos(PretrainedBase):
         """
         # (batch_size, seq_len) -> (batch_size, num_samples, seq_len)
         forecast = self.chronos.predict(
-            x, prediction_length, num_samples=num_samples, **kwargs
+            x,
+            prediction_length,
+            num_samples=num_samples,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            limit_prediction_length=limit_prediction_length,
         )
         forecast = forecast.mean(dim=1)
         return forecast.to(x.device)

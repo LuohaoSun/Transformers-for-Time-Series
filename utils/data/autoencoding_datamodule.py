@@ -31,8 +31,7 @@ class AutoEncodingDataModule(L.LightningDataModule):
         self.num_workers = num_workers
 
     def prepare_data(self) -> None:
-        # download, IO, etc. Useful with shared filesystems
-        # only called on 1 GPU/TPU in distributed
+
 
         return
 
@@ -52,6 +51,21 @@ class AutoEncodingDataModule(L.LightningDataModule):
 
     def test_dataloader(self):
         pass
+
+    @classmethod
+    def from_directory(
+        cls,
+        directory: str,
+        input_length: int,
+        batch_size: int,
+        train_val_test_split: Tuple[float, float, float] = (0.7, 0.2, 0.1),
+        num_workers: int = 1,
+        ignore_last_cols: int = 0,
+    ) -> "AutoEncodingDataModule":
+        """
+        read a directory of multipl csv files and convert it to a LightningDataModule.
+        """
+        ...
 
 
 class AutoEncodingDataset(Dataset):
@@ -79,3 +93,13 @@ class AutoEncodingDataset(Dataset):
     def __getitem__(self, index):
         return self.samples[index]
 
+    @classmethod
+    def from_csv(
+        cls,
+        csv_file_path: str,
+        input_length: int,
+        stride: int,
+        ignore_last_cols: int,
+    ) -> "AutoEncodingDataset":
+        data = pd.read_csv(csv_file_path)
+        return cls(data, input_length, stride, ignore_last_cols)

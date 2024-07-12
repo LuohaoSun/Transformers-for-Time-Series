@@ -46,6 +46,8 @@ class FrameworkBase(L.LightningModule, ABC):
     ) -> Tensor:
         """
         The forward pass of the model.
+        This will be called in the forward method of the class.
+        Refer to {self.__setattr__} method for why this design is used.
         """
         ...
 
