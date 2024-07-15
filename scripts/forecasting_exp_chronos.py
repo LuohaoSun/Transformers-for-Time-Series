@@ -4,9 +4,8 @@ def main():
     import os
 
     sys.path.append(".")
-    sys.path.append("..")
     os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+    os.environ["HF_HOME"] = ".cache/huggingface"
 
     # 使用metroBJ数据集测试各个模型的序列预测性能
     import torch

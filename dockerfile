@@ -6,6 +6,8 @@ WORKDIR /app
 
 # Copy the rest of the application code into the container
 COPY . .
+RUN pip install momentfm -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install huggingface_hub==0.19.4 -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Specify the command to run when the container starts
-CMD [ "python3", "tutorial/1.快速上手.py"]
+CMD [ "python3", "scripts/ad_exp_moment.py"]

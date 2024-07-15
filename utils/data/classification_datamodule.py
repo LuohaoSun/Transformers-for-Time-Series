@@ -95,7 +95,7 @@ class ClassificationDataModule(L.LightningDataModule):
         )
 
 
-class ClassificationDataset(Dataset):
+class ClassificationDataset1(Dataset):
     def __init__(
         self,
         data: pd.DataFrame,
@@ -125,6 +125,10 @@ class ClassificationDataset(Dataset):
     def __getitem__(self, idx):
         return self.samples[idx]
 
+class ClassificationDataset(Dataset):
+    def __init__(self) -> None:
+        super().__init__()
+    
 
 if __name__ == "__main__":
     datamodule = ClassificationDataModule("", 1, 1, 1)

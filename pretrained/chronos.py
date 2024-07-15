@@ -11,15 +11,12 @@ To use Chronos, you need to install the Chronos library:
 pip install git+https://github.com/amazon-science/chronos-forecasting.git
 """
 
-from math import sin
 from chronos import ChronosPipeline
 
-from cycler import V
 import torch
 import torch.nn as nn
 import lightning as L
-import warnings
-import pandas as pd
+
 from torch import Tensor
 from typing import Any, Dict, Iterable, Mapping, Union, Callable, Optional, List
 from .pretrained_base import PretrainedBase
@@ -29,7 +26,7 @@ class Chronos(PretrainedBase):
     def __init__(
         self,
         task: str,  # "forecasting" or "embedding"
-        out_seq_len: int = 1,
+        out_seq_len: int = 0,
         num_samples: int = 1,
         size: str = "small",  # "tiny", "mini", "small", "base", "large"
         device_map="cpu",  # use "cpu" for CPU inference, "cuda" for nVidia and "mps" for Apple Silicon
@@ -41,9 +38,9 @@ class Chronos(PretrainedBase):
         """
         NOTE: original Chronos model only supports CPU inference.
         You can modify the source code to support GPU inference.
-        A bigger num_samples leads to higher precision but also increases memory usage. 
+        A bigger num_samples leads to higher precision but also increases memory usage.
         Set a smaller value to reduce memory usage.
-        
+
         Model	            Parameters	Based on            Storage
         chronos-t5-tiny	    8M	        t5-efficient-tiny   30MB
         chronos-t5-mini	    20M	        t5-efficient-mini   80MB
@@ -71,7 +68,7 @@ class Chronos(PretrainedBase):
         self,
         x: torch.Tensor,
         out_seq_len: int = 0,
-        num_samples: int = 1,
+        num_samples: int = 0,
         temperature: Optional[float] = None,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
@@ -81,15 +78,13 @@ class Chronos(PretrainedBase):
         x: Tensor of shape (batch_size, seq_len, n_features)
         returns: Tensor of shape (batch_size, out_seq_len, n_features)
         """
-        num_samples = num_samples if num_samples > 0 else self.num_samples
-        out_seq_len = out_seq_len if out_seq_len > 0 else self.out_seq_len
-        temperature = temperature if temperature is not None else self.temperature
-        top_k = top_k if top_k is not None else self.top_k
-        top_p = top_p if top_p is not None else self.top_p
+        num_samples = num_samples or self.num_samples
+        out_seq_len = out_seq_len or self.out_seq_len
+        temperature = temperature or self.temperature
+        top_k = top_k or self.top_k
+        top_p = top_p or self.top_p
         limit_prediction_length = (
-            limit_prediction_length
-            if limit_prediction_length is not None
-            else self.limit_prediction_length
+            limit_prediction_length or self.limit_prediction_length
         )
         if self.task == "forecasting":
             return self._chronos_forecast_3d(
@@ -102,7 +97,7 @@ class Chronos(PretrainedBase):
                 limit_prediction_length,
             )
         elif self.task == "embedding":
-            return self._chronos_embed_3d(x)[:, -self.out_seq_len :, :]
+            return self._chronos_embed_3d(x)[:, :-out_seq_len, :]
         else:
             raise ValueError(f"Unknown task: {self.task}")
 

@@ -62,3 +62,11 @@ lightning_logs/
 Thumbs.db
 desktop.ini
 
+# Caches
+.cache/
+temp/
+
+# large files
+*.zip
+*.tar
+*.7z
