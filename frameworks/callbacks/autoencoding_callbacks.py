@@ -27,20 +27,21 @@ class ViAndLog(L.Callback):
         batch_idx: int,
         dataloader_idx: int = 0,
     ) -> None:
-        if trainer.current_epoch % self.every_n_epochs != 0 or batch_idx != 0:
+        if trainer.current_epoch % self.every_n_epochs != 0:  # or batch_idx != 0:
             return
-        tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
 
         series_dict = {k: v for k, v in outputs.items() if k != "loss"}
-
         img_all_series = SeriesPlotter.plot_series(series_dict)
-        tb_writer.add_figure(
-            f"all_series", img_all_series, global_step=trainer.global_step
-        )
-
         imgs_single_series = [
             SeriesPlotter.plot_series({k: v}) for k, v in series_dict.items()
         ]
+
+        tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
+        tb_writer.add_figure(
+            f"all_series_batch_{batch_idx}",
+            img_all_series,
+            global_step=trainer.global_step,
+        )
         for img, (k, v) in zip(imgs_single_series, series_dict.items()):
             tb_writer.add_figure(f"{k}", img, global_step=trainer.global_step)
 

@@ -26,3 +26,4 @@ numpy<=1.26.4
 pandas
 ipywidgets      # for rich interactive visualizations in notebooks
 psutil          # for monitoring system resources during training
+jupyter         # for running notebooks

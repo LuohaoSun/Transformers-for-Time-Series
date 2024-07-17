@@ -16,7 +16,7 @@ class MOMENT(PretrainedBase):
     def __init__(
         self, task: str  # forecasting, classification, reconstruction, embedding
     ):
-        super().__init__()
+        super().__init__(task)
         moment = MOMENTPipeline.from_pretrained(
             MODEL,
             model_kwargs={"task_name": task},
@@ -24,11 +24,12 @@ class MOMENT(PretrainedBase):
         moment.init()
         self.moment = moment
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor):
         x = x.permute(0, 2, 1)
-        reconstruction = self.moment(x).reconstruction
-        anomaly_scores = self.moment(x).anomaly_scores
-        return torch.from_numpy(reconstruction)
+        output = self.moment(x)
+        reconstruction: Tensor = output.reconstruction  #type: ignore
+        anomaly_scores = output.anomaly_scores
+        return reconstruction.permute(0, 2, 1)
 
     def _pre_process_input(self, x: Tensor) -> Tensor:
         """

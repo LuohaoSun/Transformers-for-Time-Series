@@ -1,13 +1,13 @@
-# Use an official Python runtime as the base image
-FROM python:lightning
+# DESCRIPTION:    
+# This Dockerfile is used to build an image containing lightning.
 
-# Set the working directory in the container
-WORKDIR /app
+FROM python:lightning-main
 
-# Copy the rest of the application code into the container
-COPY . .
-RUN pip install momentfm -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip install huggingface_hub==0.19.4 -i https://pypi.tuna.tsinghua.edu.cn/simple
+WORKDIR /
 
-# Specify the command to run when the container starts
-CMD [ "python3", "scripts/ad_exp_moment.py"]
+# RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --dry-run
+
+EXPOSE 22
+
+CMD ["python"]
+# CMD ["code-server", "--auth", "none", "--port", "8080", "--host", "0.0.0.0"]

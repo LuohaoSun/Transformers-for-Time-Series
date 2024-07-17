@@ -10,15 +10,49 @@ from utils import get_loss_fn
 
 class PretrainedBase(L.LightningModule, ABC):
 
-    def __init__(self) -> None:
+    def __init__(self, task: str) -> None:
         super().__init__()
         # 预训练模型可能没有需要训练的参数，但是为了避免optimizer的报错，需要设置一个参数
+        self.task = task
         self._sent_2_optimizer = nn.Parameter(torch.tensor(0.0))
 
     @abstractmethod
+    @torch.no_grad()
     def forward(self, x: Tensor) -> Tensor:
         """
         original output of the model, i.e., embeddings, if available.
         """
-        pass
+        if self.task == "forecasting":
+            return self.forecast(x)
+        elif self.task == "reconstruction":
+            return self.reconstruct(x)
+        elif self.task == "anomaly_detection":
+            return self.anomaly_detect(x)
+        elif self.task == "embedding":
+            return self.embed(x)
+        else:
+            raise ValueError(f"Unknown task: {self.task}")
 
+    def forecast(self, x: Tensor) -> Tensor:
+        """
+        forecast the future sequence
+        """
+        ...
+
+    def reconstruct(self, x: Tensor) -> Tensor:
+        """
+        reconstruct the input sequence
+        """
+        ...
+
+    def anomaly_detect(self, x: Tensor) -> Tensor:
+        """
+        detect anomalies in the input sequence
+        """
+        ...
+
+    def embed(self, x: Tensor) -> Tensor:
+        """
+        embed the input sequence
+        """
+        ...

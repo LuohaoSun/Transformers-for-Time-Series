@@ -12,6 +12,7 @@ from frameworks.utils import get_loss_fn
 
 from .framework_base import FrameworkBase
 from .callbacks.autoencoding_callbacks import ViAndLog
+from .callbacks.classification_callbacks import ComputeAndLogMetrics2Tensorboard
 
 
 class AnomalyDetectionFramework(FrameworkBase):
@@ -32,21 +33,21 @@ class AnomalyDetectionFramework(FrameworkBase):
         detection_level: str,  # 'step' or 'sequence'
         threshold: float,
         # logging params
-        vi_every_n_epochs: int = 1,
-        figsize: Tuple[int, int] = (8, 8),
+        vi_every_n_epochs: int = 10,
+        figsize: Tuple[int, int] = (7, 3),
         # additional params
         custom_neck: Optional[nn.Module] = None,
         custom_head: Optional[nn.Module] = None,
     ) -> None:
         """
-        Initializes the Framework class.
+        Anomaly Detection Framework  is a framework composed of the autoencoding and classification frameworks.
         Methods:
             - detect_anomaly: Detects anomalies in the input sequence.
             - reconstruct: Reconstructs the input sequence. (Same as forward method)
         Args:
             backbone (nn.Module): The backbone module.
             head (nn.Module): The head module.
-            
+
             detection_level (str): The level at which the anomaly detection should be performed.
                 NOTE: different levels require different Tensor shapes for the output. Refer to the detect_anomaly method.
             every_n_epochs (int): log the visualization figures every n epochs.
@@ -80,12 +81,10 @@ class AnomalyDetectionFramework(FrameworkBase):
         return F.mse_loss(x_hat, x)
 
     def get_task_callbacks(self):
-        if self.detection_level == "step":
-            return [ViAndLog(self.every_n_epochs, self.figsize)]
-        elif self.detection_level == "sequence":
-            raise NotImplementedError(
-                "Sequence level anomaly detection is not implemented yet."
-            )
+        return [
+            ComputeAndLogMetrics2Tensorboard(num_classes=2),
+            ViAndLog(self.every_n_epochs, self.figsize),
+        ]
 
     def detect_anomaly(
         self,
@@ -113,16 +112,6 @@ class AnomalyDetectionFramework(FrameworkBase):
                 f"detection_level should be either 'step' or 'sequence', got {detection_level}"
             )
 
-    def _detect_anomaly_step(self, x: Tensor, threshold: float) -> Tensor:
-        x_hat = self.reconstruct(x)
-        anomaly_score = self._compute_anomaly_score_step(x_hat, x)
-        return anomaly_score > threshold
-
-    def _detect_anomaly_sequence(self, x: Tensor, threshold: float) -> Tensor:
-        x_hat = self.reconstruct(x)
-        anomaly_score = self._compute_anomaly_score_sequence(x_hat, x)
-        return anomaly_score > threshold
-
     def _compute_anomaly_score_step(self, x_hat: Tensor, x: Tensor) -> Tensor:
         """
         x (Tensor): shape (batch_size, seq_len, n_features)
@@ -139,7 +128,7 @@ class AnomalyDetectionFramework(FrameworkBase):
         Returns: Tensor of shape (batch_size, 1, 1) with the anomaly score for the entire sequence
         """
         anomaly_score = F.mse_loss(x_hat, x, reduction="none")
-        anomaly_score = anomaly_score.mean(dim=[1, 2], keepdim=True)
+        anomaly_score = anomaly_score.mean(dim=[-1, -2], keepdim=True)
         anomaly_score = (F.sigmoid(anomaly_score) - 0.5) * 2
         return anomaly_score
 
@@ -147,6 +136,7 @@ class AnomalyDetectionFramework(FrameworkBase):
         self, x: Tensor, backbone: nn.Module, neck: nn.Module, head: nn.Module
     ) -> Tensor:
         """
+        Only reconstructs the input sequence.
         input: (batch_size, seq_len, n_features)
         output: (batch_size, seq_len, n_features)
         """
@@ -166,12 +156,21 @@ class AnomalyDetectionFramework(FrameworkBase):
 
         x_hat = self.forward(x)
         loss = loss_fn(x_hat, x)
+
         anomaly_score_step = self._compute_anomaly_score_step(x_hat, x)
+        anomaly_score_sequence = self._compute_anomaly_score_sequence(x_hat, x)
+        y_hat = torch.tensor(
+            anomaly_score_step > self.threshold
+            if self.detection_level == "step"
+            else anomaly_score_sequence > self.threshold
+        )  # y_hat is the predicted anomaly indicator
 
         return {
             "loss": loss,
             "original": x,
             "output": x_hat,
             "anomaly_score_step": anomaly_score_step,
-            "anomaly_step": anomaly_score_step > self.threshold,
+            "anomaly_score_sequence": anomaly_score_sequence,
+            "y": y,
+            "y_hat": y_hat,
         }
