@@ -1,19 +1,18 @@
 # Description: An example of how to use the AutoEncodingFramework
-import torch.nn as nn
-from utils.visualization import SeriesPlotter
+
 import sys
 import os
 
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # os.environ["HF_HOME"] = ".cache/huggingface"
-
 sys.path.append("./")
+import torch.nn as nn
+from src.utils.visualization import SeriesPlotter
 
 
 def main():
-
     # Step 1. Choose a dataset
-    from utils.data import AutoEncodingDataModule
+    from src.utils.data import AutoEncodingDataModule
 
     datamodule = AutoEncodingDataModule(
         data_path="data/bearing_fault_prediction/0",
@@ -26,12 +25,12 @@ def main():
     )
 
     # Step 2. Choose a backbone
-    from pretrained.moment import MOMENT
+    from src.pretrained.moment import MOMENT
 
     backbone = MOMENT(task="reconstruction")
 
     # Step 3. Choose a framework
-    from frameworks import AnomalyDetectionFramework
+    from src.frameworks import AnomalyDetectionFramework
 
     framework = AnomalyDetectionFramework(
         backbone=backbone,

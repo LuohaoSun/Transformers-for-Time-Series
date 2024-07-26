@@ -5,7 +5,7 @@ import torch
 from typing import Mapping, Iterable, Tuple, Callable, Optional
 from torch import Tensor
 from abc import ABC, abstractmethod
-from utils import get_loss_fn
+from ..utils import get_loss_fn
 
 
 class PretrainedBase(L.LightningModule, ABC):

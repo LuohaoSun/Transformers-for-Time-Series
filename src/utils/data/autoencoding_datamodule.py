@@ -1,13 +1,9 @@
 import os
 from typing import Tuple
-import pandas as pd
-import torch
 from torch import Tensor
-import torch.utils
 from torch.utils.data import Dataset, DataLoader, random_split
-from tqdm import tqdm
 import lightning as L
-from utils.data.sliding_window_dataset import SlidingWindowDataset
+from ...utils.data.sliding_window_dataset import SlidingWindowDataset
 
 
 class AutoEncodingDataModule(L.LightningDataModule):
@@ -88,7 +84,6 @@ class AutoEncodingDataModule(L.LightningDataModule):
 
 
 class AutoEncodingDataset(Dataset):
-
     def __init__(
         self, path: str, windows_size: int, stride: int, ignore_last_cols: int
     ) -> None:
@@ -112,6 +107,5 @@ class AutoEncodingDataset(Dataset):
     def __getitem__(self, index) -> Tuple[Tensor, Tensor]:
         sequence = self.sliding_window_dataset[index]
         if self.ignore_last_cols > 0:
-            sequence = sequence[:, :-self.ignore_last_cols]
+            sequence = sequence[:, : -self.ignore_last_cols]
         return sequence, sequence
-
