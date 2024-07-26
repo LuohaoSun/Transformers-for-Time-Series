@@ -1,4 +1,6 @@
 # Description: An example of how to use the AutoEncodingFramework
+import torch.nn as nn
+from utils.visualization import SeriesPlotter
 import sys
 import os
 
@@ -6,8 +8,6 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # os.environ["HF_HOME"] = ".cache/huggingface"
 
 sys.path.append("./")
-from utils.visualization import SeriesPlotter
-import torch.nn as nn
 
 
 def main():
