@@ -27,12 +27,12 @@ def get_default_callbacks(early_stopping_patience: int) -> list[L.Callback]:
         EarlyStopping(monitor="val_loss", patience=early_stopping_patience),
         # framework default callbacks
         PrintTrainingMsg(),
-        PrintTestMsg(),
         LogGraph(),
         LogHyperparams(),
         LogLoss(),
         LoadCheckpoint(),
         LaunchTensorboard(),
+        PrintTestMsg(),
     ]
 
 
@@ -94,10 +94,7 @@ class LaunchTensorboard(L.Callback):
                 stderr=subprocess.PIPE,
             )
             msg = f"""
-=======================================
-=        Tensorboard Activated.       =
-=======================================
-Open http://localhost:6006/ to view the training process.
+TENSORBOARD ACTIVATED AT http://localhost:6006/
 tensorboard PID: {self.proc.pid}
 """
         print(msg)
@@ -173,9 +170,7 @@ class LogHyperparams(L.Callback):
             hparams_to_log, metrics={"Best Validation Loss": best_val_loss}
         )
         msg = f"""
-=======================================
-=       Hyperparameters Logged.       =
-=======================================
+HYPERPARAMETERS LOGGED.
 Best validation loss: {best_val_loss}
 Hyperparameters:"""
         print(msg)
@@ -268,9 +263,7 @@ class LoadCheckpoint(L.Callback):
 
         best_model_path, best_val_loss, best_val_loss_epoch = ckpt_info
         msg = f"""
-=======================================
-=         Checkpoint Loaded.          =
-=======================================
+CKECKPOINT LOADED.
 Best validation loss: {best_val_loss} at epoch {best_val_loss_epoch}
 Checkpoint saved at: {best_model_path}
 """
