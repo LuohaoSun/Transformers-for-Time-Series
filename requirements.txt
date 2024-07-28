@@ -22,7 +22,8 @@ rich            # beautiful text formatting in terminal
 pytest          # tests
 # sh              # for running bash commands in some tests (linux/macos only)
 matplotlib      # for plotting
-numpy
+numpy<=1.26.4 
 pandas
 ipywidgets      # for rich interactive visualizations in notebooks
 psutil          # for monitoring system resources during training
+jupyter         # for running notebooks

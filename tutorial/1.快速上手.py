@@ -28,7 +28,7 @@ def main():
     )
 
     # 第2步：根据喜好选择骨干模型。此处你需要指定模型超参数，例如d_model、num_layers等。
-    from backbones import MLPBackbone
+    from src.backbones import MLPBackbone
 
     backbone = MLPBackbone(
         in_seq_len=4096,
@@ -38,7 +38,7 @@ def main():
     )
 
     # 第3步：根据任务选择framework。此处你需要指定任务参数，例如out_seq_len、num_classes等。
-    from frameworks import ClassificationFramework
+    from src.frameworks import ClassificationFramework
 
     framework = ClassificationFramework(
         backbone=backbone,
@@ -48,7 +48,7 @@ def main():
     )
 
     # 第4步：训练和测试。此处你需要指定优化算法的参数，主要是学习率，训练代数。对于更复杂的情况，还包括优化算法、损失函数和学习率调度器的选择。
-    framework.fit(datamodule, max_epochs=100, lr=1e-3)
+    framework.fit(datamodule, max_epochs=20, lr=1e-3)
     framework.test(datamodule)
 
 

@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
-from utils.data_augmentation import (
+from utils.data.data_augmentation import (
     NoisyDataset,
     MaskingDataset,
     ShiftDataset,

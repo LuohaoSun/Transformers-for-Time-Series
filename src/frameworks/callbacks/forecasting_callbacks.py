@@ -17,7 +17,7 @@ from matplotlib.figure import Figure
 from typing import Mapping, Iterable
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
-from utils.visualization import SeriesPlotter
+from ...utils.visualization import SeriesPlotter
 
 __all__ = [
     "ComputeMetricsAndLog",

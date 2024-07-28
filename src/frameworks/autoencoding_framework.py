@@ -8,7 +8,7 @@ import torch
 from typing import Mapping, Iterable, Tuple, Callable, Optional
 from torch import Tensor
 
-from frameworks.utils import get_loss_fn
+from ..frameworks.utils import get_loss_fn
 
 from .framework_base import FrameworkBase
 from .callbacks.autoencoding_callbacks import ViAndLog

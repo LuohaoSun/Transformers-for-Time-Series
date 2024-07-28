@@ -12,7 +12,7 @@ from lightning.pytorch.callbacks import (
 from rich import print
 from torch.utils.tensorboard.writer import SummaryWriter
 from lightning.pytorch.loggers import TensorBoardLogger
-from utils import print_dict, find_process_by_port
+from ...utils import print_dict, find_process_by_port
 import socket
 
 __all__ = ["get_default_callbacks"]
