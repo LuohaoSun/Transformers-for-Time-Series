@@ -2,7 +2,7 @@
 import sys
 
 sys.path.append("./")
-from utils.visualization import SeriesPlotter
+from src.utils.visualization import SeriesPlotter
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     datamodule = FaultPredictionDataModule(batch_size=40)
 
     # Step 2. Choose a backbone
-    from backbones import PatchTSTBackbone
+    from src.backbones import PatchTSTBackbone
 
     backbone = PatchTSTBackbone(
         in_features=1,
@@ -26,7 +26,7 @@ def main():
     )
 
     # Step 3. Choose a framework
-    from frameworks import AutoEncodingFramework
+    from src.frameworks import AutoEncodingFramework
 
     framework = AutoEncodingFramework(
         backbone=backbone,

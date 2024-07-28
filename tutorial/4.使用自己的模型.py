@@ -6,7 +6,7 @@ sys.path.append("..")
 
 def main():
     # 在【快速上手】中，我们已经使用了MLP骨干进行了一个简单的分类任务：
-    from backbones import MLPBackbone
+    from src.backbones import MLPBackbone
 
     backbone1 = MLPBackbone(
         in_seq_len=4096,
@@ -16,7 +16,7 @@ def main():
     )
 
     # 在【更换数据集、模型和任务类别】中，我们使用了LSTM骨干进行了一个简单的序列预测任务：
-    from backbones import LSTMBackbone
+    from src.backbones import LSTMBackbone
 
     backbone2 = LSTMBackbone(
         in_features=276,
@@ -50,7 +50,7 @@ def main():
     backbone3 = GRUBackbone(in_features=276, hidden_features=128, num_layers=2)
 
     # 你可以根据需要自定义任意的骨干模型，只要遵守上述规则即可。它会兼容任何任务框架，你只需要同之前一样使用即可：
-    from frameworks import ForecastingFramework
+    from src.frameworks import ForecastingFramework
 
     framework = ForecastingFramework(
         backbone=backbone3,

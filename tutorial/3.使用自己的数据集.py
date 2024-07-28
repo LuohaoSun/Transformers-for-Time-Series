@@ -26,7 +26,7 @@ def main():
     # 上述数据集均为可直接使用的Datamodule，但在实际应用中，我们自己的数据集是由.csv文件或其他格式的原始数据组成的。
     # 为了方便从新的原始数据集创建新的datamodule，本项目提供了一些工具，你只需要按照要求的格式提供原始数据集，即可创建新的datamodule。
     # 作为一个简单的示例，我们使用PEMS-BAY数据集的.csv格式原始数据，创建一个用于序列预测的Datamodule实例：
-    from utils.data import ForecastingDataModule
+    from src.utils.data import ForecastingDataModule
 
     data_path = "data/pems_bay/pems_bay.csv"
     datamodule3 = ForecastingDataModule(
