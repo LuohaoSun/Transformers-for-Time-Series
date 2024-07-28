@@ -22,7 +22,7 @@ from typing import Any, Dict, Iterable, Mapping, Union, Callable, Optional, List
 from .pretrained_base import PretrainedBase
 
 
-class Chronos(PretrainedBase):
+class Chronos(nn.Module):
     def __init__(
         self,
         task: str,  # "forecasting" or "embedding"

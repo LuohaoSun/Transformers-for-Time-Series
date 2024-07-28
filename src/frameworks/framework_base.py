@@ -42,7 +42,11 @@ class FrameworkBase(L.LightningModule, ABC):
 
     @abstractmethod
     def framework_forward(
-        self, x: Tensor, backbone: nn.Module, neck: nn.Module, head: nn.Module
+        self,
+        x: Tensor,
+        backbone: Callable[..., Tensor],
+        neck: Callable[..., Tensor],
+        head: Callable[..., Tensor],
     ) -> Tensor:
         """
         The forward pass of the model.
@@ -71,7 +75,7 @@ class FrameworkBase(L.LightningModule, ABC):
         self, batch: Iterable[Tensor], loss_fn: Callable[[Tensor, Tensor], Tensor]
     ) -> Mapping[str, Tensor]:
         """
-        Performs a single model step.
+        Performs a single model step (training_step, validation_step, test_step).
 
         Args:
             batch (Iterable[Tensor]): The input batch.
@@ -93,7 +97,7 @@ class FrameworkBase(L.LightningModule, ABC):
     _framework_optimizer: Optimizer
     _framework_logger: TensorBoardLogger
     _framework_trainer: L.Trainer
-    _framework_loss: Callable
+    _framework_loss: Callable[..., Tensor]
     _framework_callbacks: list[L.Callback]
     _framework_backbone: nn.Module
     _framework_neck: nn.Module

@@ -2,7 +2,7 @@ import lightning as L
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from typing import Mapping, Iterable, Tuple, Callable, Optional
+from typing import Mapping, Iterable, Tuple, Callable, Optional, final
 from torch import Tensor
 from abc import ABC, abstractmethod
 from ..utils import get_loss_fn
@@ -16,7 +16,7 @@ class PretrainedBase(L.LightningModule, ABC):
         self.task = task
         self._sent_2_optimizer = nn.Parameter(torch.tensor(0.0))
 
-    @abstractmethod
+    @final
     @torch.no_grad()
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -33,24 +33,21 @@ class PretrainedBase(L.LightningModule, ABC):
         else:
             raise ValueError(f"Unknown task: {self.task}")
 
+    @abstractmethod
     def forecast(self, x: Tensor) -> Tensor:
         """
         forecast the future sequence
         """
         ...
 
+    @abstractmethod
     def reconstruct(self, x: Tensor) -> Tensor:
         """
         reconstruct the input sequence
         """
         ...
 
-    def anomaly_detect(self, x: Tensor) -> Tensor:
-        """
-        detect anomalies in the input sequence
-        """
-        ...
-
+    @abstractmethod
     def embed(self, x: Tensor) -> Tensor:
         """
         embed the input sequence

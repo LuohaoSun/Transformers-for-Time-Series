@@ -1,3 +1,13 @@
+"""
+These is a simplified application of the pretrained model from https://github.com/moment-timeseries-foundation-model/moment
+forecasting and classification method of the original model implementation is dropped due to the finetuning requirement.
+
+to use MOMENT, run:
+```
+pip install momentfm
+```
+"""
+
 from momentfm import MOMENTPipeline
 
 import torch
@@ -13,9 +23,24 @@ D_MODEL = 1024
 
 
 class MOMENT(PretrainedBase):
-    def __init__(
-        self, task: str  # forecasting, classification, reconstruction, embedding
-    ):
+    def __init__(self, task: str):  # forecasting, reconstruction, embedding
+        """
+        MOMENT supports the following tasks:
+            - zero-shot reconstruction
+            - embedding.
+        NOTE: MOMENT cannot be trained, but you can use its embeddings to fine-tune your own head.
+        model input:
+            - Time-series: Tensor of shape (batch_size, seq_len = 512, channels)
+            - Input mask(optional): Tensor of shape (batch_size, seq_len = 512)。长度与时间步相同。
+            它用来指示模型应该关注哪些时间步。例如，如果时间序列数据中包含填充（padding）的步骤，可以使用输入掩码来告诉模型忽略这些填充步骤。
+            在掩码中，被填充的位置会被标记为零。
+            - mask(optional): Tensor of shape (batch_size, seq_len = 512)。长度与时间步相同。
+            它用来表示数据中缺失或未观察到的值。模型使用所谓的掩码标记（mask tokens）来替换包含任何缺失时间步的块。
+            这样，MOMENT模型在重建过程中可以考虑到这些缺失值。
+        model output:
+            1. reconstruction: Tensor of shape (batch_size, seq_len = 512, channels)
+            2. embedding: Tensor of shape (batch_size, seq_len = 512, d = 1024 for MOMENT-1-large)
+        """
         super().__init__(task)
         moment = MOMENTPipeline.from_pretrained(
             MODEL,
@@ -24,12 +49,22 @@ class MOMENT(PretrainedBase):
         moment.init()
         self.moment = moment
 
-    def forward(self, x: Tensor):
+    def forecast(self, x: Tensor) -> Tensor | None:
+        return None
+
+    def reconstruct(self, x: Tensor) -> Tensor:
+        assert self.task == "reconstruction"
         x = x.permute(0, 2, 1)
         output = self.moment(x)
-        reconstruction: Tensor = output.reconstruction  #type: ignore
-        anomaly_scores = output.anomaly_scores
+        reconstruction: Tensor = output.reconstruction  # type: ignore
         return reconstruction.permute(0, 2, 1)
+
+    def embed(self, x: Tensor) -> Tensor:
+        assert self.task == "embedding"
+        x = x.permute(0, 2, 1)
+        output = self.moment(x)
+        embeddings: Tensor = output.embeddings  # type: ignore
+        return embeddings.permute(0, 2, 1)
 
     def _pre_process_input(self, x: Tensor) -> Tensor:
         """

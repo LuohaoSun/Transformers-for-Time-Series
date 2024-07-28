@@ -2,13 +2,13 @@
 import sys
 
 sys.path.append("./")
-from utils.visualization import SeriesPlotter
+from src.utils.visualization import SeriesPlotter
 
 
 def main():
 
     # Step 1. Choose a dataset
-    from utils.data import AutoEncodingDataModule
+    from src.utils.data import AutoEncodingDataModule
     datamodule=AutoEncodingDataModule(
         data_path="data/bearing_fault_prediction/0",
         windows_size=128,
@@ -20,16 +20,16 @@ def main():
     )
 
     # Step 2. Choose a backbone
-    from pretrained.chronos import Chronos
+    from src.pretrained.chronos import Chronos
 
     backbone = Chronos(
         task='embedding',
         size='small',
-        device_map='cuda',
+        device_map='cpu',
     )
 
     # Step 3. Choose a framework
-    from frameworks import AnomalyDetectionFramework
+    from src.frameworks import AnomalyDetectionFramework
 
     framework = AnomalyDetectionFramework(
         backbone=backbone,
