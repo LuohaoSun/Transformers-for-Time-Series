@@ -17,7 +17,7 @@ class SeriesPlotter:
     def plot_and_show(
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
-        figsize=(5, 5),
+        figsize=(5, 3),
     ) -> Figure:
         img = cls._plot_series(series, figsize)
         plt.show()
@@ -28,7 +28,7 @@ class SeriesPlotter:
     def plot_series(
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
-        figsize=(10, 6),
+        figsize=(5, 3),
         line_styles: List[str] | None = None,
         markers: List[str] | None = None,  # could be
         colors: List[str] | None = None,
@@ -54,10 +54,10 @@ class SeriesPlotter:
     def _plot_series(
         cls,
         series: Union[Tensor, List[Tensor], Dict[str, Tensor]],
-        figsize=(10, 6),
+        figsize,
     ) -> Figure:
 
-        plt.figure(figsize=figsize, dpi=300)
+        plt.figure(figsize=figsize, dpi=100)
 
         if isinstance(series, dict):
             for series_name, series_values in series.items():

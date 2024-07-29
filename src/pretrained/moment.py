@@ -26,7 +26,7 @@ class MOMENT(PretrainedBase):
     def __init__(self, task: str):  # forecasting, reconstruction, embedding
         """
         MOMENT supports the following tasks:
-            - zero-shot reconstruction
+            - zero-shot reconstruction.
             - embedding.
         NOTE: MOMENT cannot be trained, but you can use its embeddings to fine-tune your own head.
         model input:
@@ -50,7 +50,7 @@ class MOMENT(PretrainedBase):
         self.moment = moment
 
     def forecast(self, x: Tensor) -> Tensor | None:
-        return None
+        raise NotImplementedError("MOMENT does not support forecasting")
 
     def reconstruct(self, x: Tensor) -> Tensor:
         assert self.task == "reconstruction"

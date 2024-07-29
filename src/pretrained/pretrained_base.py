@@ -26,8 +26,6 @@ class PretrainedBase(L.LightningModule, ABC):
             return self.forecast(x)
         elif self.task == "reconstruction":
             return self.reconstruct(x)
-        elif self.task == "anomaly_detection":
-            return self.anomaly_detect(x)
         elif self.task == "embedding":
             return self.embed(x)
         else:

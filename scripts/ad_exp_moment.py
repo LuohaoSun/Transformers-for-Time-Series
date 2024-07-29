@@ -39,14 +39,13 @@ def main():
         out_seq_len=512,
         out_features=1,
         threshold=0.9,
-        detection_level="step",
         vi_every_n_epochs=10,
         custom_neck=nn.Identity(),
         custom_head=nn.Identity(),
     )
 
     # Step 4. fit and test
-    framework.fit(datamodule, max_epochs=0, accelerator="cuda")
+    framework.fit(datamodule, max_epochs=0, accelerator="mps")
     framework.test(datamodule)
 
 
