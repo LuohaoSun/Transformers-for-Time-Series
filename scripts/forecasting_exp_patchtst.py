@@ -26,14 +26,15 @@ def main():
     )
 
     # 2. 选择骨干模型
-    from src.backbones import LSTMBackbone
+    from src.backbones import PatchTSTBackbone
 
     DEVICE = "cuda"  # if torch.cuda.is_available() else "cpu"
 
-    lstm_backbone = LSTMBackbone(
+    patchtst_backbone = PatchTSTBackbone(
         in_features=NUM_STATIONS,
-        hidden_features=64,
-        auto_recurrsive_steps=OUTPUT_LENGTH,
+        d_model=64,
+        patch_size=16,
+        patch_stride=16,
         num_layers=2,
     )
 
@@ -41,7 +42,7 @@ def main():
     from src.frameworks import ForecastingFramework
 
     framework = ForecastingFramework(
-        backbone=lstm_backbone,
+        backbone=patchtst_backbone,
         backbone_out_features=64,
         out_seq_len=OUTPUT_LENGTH,
         out_features=NUM_STATIONS,
