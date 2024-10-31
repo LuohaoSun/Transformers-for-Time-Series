@@ -26,7 +26,7 @@ def main():
     )
 
     # 2. 选择骨干模型
-    from src.backbones import LSTMBackbone
+    from t4ts.backbones import LSTMBackbone
 
     DEVICE = "cuda"  # if torch.cuda.is_available() else "cpu"
 
@@ -38,7 +38,7 @@ def main():
     )
 
     # 3. 选择任务框架
-    from src.frameworks import ForecastingFramework
+    from t4ts.frameworks import ForecastingFramework
 
     framework = ForecastingFramework(
         backbone=lstm_backbone,

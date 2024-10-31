@@ -7,12 +7,12 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # os.environ["HF_HOME"] = ".cache/huggingface"
 sys.path.append("./")
 import torch.nn as nn
-from src.utils.visualization import SeriesPlotter
+from t4ts.utils.visualization import SeriesPlotter
 
 
 def main():
     # Step 1. Choose a dataset
-    from src.utils.data import AutoEncodingDataModule
+    from t4ts.utils.data import AutoEncodingDataModule
 
     datamodule = AutoEncodingDataModule(
         data_path="data/bearing_fault_prediction/0",
@@ -25,12 +25,12 @@ def main():
     )
 
     # Step 2. Choose a backbone
-    from src.pretrained.moment import MOMENT
+    from t4ts.pretrained.moment import MOMENT
 
     backbone = MOMENT(task="reconstruction")
 
     # Step 3. Choose a framework
-    from src.frameworks import AnomalyDetectionFramework
+    from t4ts.frameworks import AnomalyDetectionFramework
 
     framework = AnomalyDetectionFramework(
         backbone=backbone,

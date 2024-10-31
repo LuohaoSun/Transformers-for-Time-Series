@@ -29,7 +29,7 @@ def main():
     )
 
     # 第2步：根据喜好选择骨干模型。此处使用LSTM骨干，指定输入特征数为276，隐藏特征数为128，自回归步数为6，层数为2。
-    from src.backbones import LSTMBackbone
+    from t4ts.backbones import LSTMBackbone
 
     backbone = LSTMBackbone(
         in_features=NUM_STATIONS,
@@ -39,7 +39,7 @@ def main():
     )
 
     # 第3步：根据任务选择framework。此处你需要指定任务参数，例如out_seq_len、num_classes等。
-    from src.frameworks import ForecastingFramework
+    from t4ts.frameworks import ForecastingFramework
 
     framework = ForecastingFramework(
         backbone=backbone,
@@ -53,7 +53,7 @@ def main():
     framework.test(datamodule)
 
     # 查看预测曲线
-    from src.utils.visualization import SeriesPlotter
+    from t4ts.utils.visualization import SeriesPlotter
 
     batch = next(iter(datamodule.train_dataloader()))
     x, y = batch

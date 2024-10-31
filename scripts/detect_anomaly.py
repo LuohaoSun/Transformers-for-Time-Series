@@ -6,7 +6,7 @@ sys.path.append("./")
 
 
 def read_data(path):
-    from src.utils.data import SlidingWindowDataset
+    from t4ts.utils.data import SlidingWindowDataset
 
     x = SlidingWindowDataset.from_csv(path, window_size=512, stride=512)[0]
     x = (x - x.mean()) / x.std()
@@ -30,8 +30,8 @@ def compute_anomaly_score(x_hat: torch.Tensor, x: torch.Tensor):
 
 
 def main(csv_path):
-    from src.pretrained.moment import MOMENT
-    from src.utils.visualization import SeriesPlotter
+    from t4ts.pretrained.moment import MOMENT
+    from t4ts.utils.visualization import SeriesPlotter
 
     x = read_data(csv_path)
 

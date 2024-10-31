@@ -2,7 +2,7 @@
 import sys
 
 sys.path.append("./")
-from src.utils.visualization import SeriesPlotter
+from t4ts.utils.visualization import SeriesPlotter
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     datamodule = FaultPredictionDataModule(batch_size=40)
 
     # Step 2. Choose a backbone
-    from src.backbones import PatchTSTBackbone
+    from t4ts.backbones import PatchTSTBackbone
 
     backbone = PatchTSTBackbone(
         in_features=1,
@@ -26,7 +26,7 @@ def main():
     )
 
     # Step 3. Choose a framework
-    from src.frameworks import AutoEncodingFramework
+    from t4ts.frameworks import AutoEncodingFramework
 
     framework = AutoEncodingFramework(
         backbone=backbone,
