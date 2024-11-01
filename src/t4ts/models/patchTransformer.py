@@ -5,27 +5,22 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from .components import positional_embedding as PE
-from .components import token_embedding as TE
+from .layers import positional_embedding as PE
+from .layers import token_embedding as TE
 
 
-class PatchTSTBackbone(L.LightningModule):
-    # TODO: use:
-    #               [cls] token for classification,
-    #               [sep] token for regression,
-    #               [mask] token for masked reconstruction
-    #               [pad] token for padding
+class PatchTransformer(L.LightningModule):
+
     def __init__(
         self,
         in_features: int,
-        d_model: int,
         patch_size: int,
-        patch_stride: int,
+        d_model: int,
+        out_features: int,
         num_layers: int,
         dropout: float = 0.1,
         nhead: int = 4,
         activation: str | Callable[[Tensor], Tensor] = "gelu",
-        additional_tokens_at_last: int = 0,
         norm_first: bool = True,
     ) -> None:
         """
@@ -33,9 +28,9 @@ class PatchTSTBackbone(L.LightningModule):
 
         Args:
             in_features (int): Number of input features.
-            d_model (int): Dimensionality of the model.
             patch_size (int): Size of the patches. <= 16 is recommended.
-            patch_stride (int): Stride of the patches. If 0, patch_stride = patch_size, recommended.
+            d_model (int): Dimensionality of the model, converted from in_features*patch_size.
+            out_features (int): Number of output features.
             num_layers (int): Number of transformer layers.
             dropout (float, optional): Dropout rate. Defaults to 0.1.
             nhead (int, optional): Number of attention heads. Defaults to 4.
@@ -48,13 +43,14 @@ class PatchTSTBackbone(L.LightningModule):
         super().__init__()
 
         self.d_model = d_model
-        self.token_emb = TE.PatchEmbedding(
+        self.patch_emb = TE.PatchEmbedding(
             in_features=in_features,
             d_model=d_model,
             patch_size=patch_size,
-            patch_stride=patch_stride if patch_stride > 0 else patch_size,
+            out_features=out_features,
         )
-        self.pos_emb = PE.SinPosEmbedding(d_model=d_model, max_len=1024)
+        self.patch_size = patch_size
+        self.pos_emb = PE.RotaryPosEmbedding(d_model=d_model, max_len=1024)
         transformer_encoder_layer = nn.TransformerEncoderLayer(
             d_model=d_model,
             nhead=nhead,
@@ -68,23 +64,17 @@ class PatchTSTBackbone(L.LightningModule):
             transformer_encoder_layer, num_layers=num_layers
         )
 
-        self.atal = additional_tokens_at_last
-        if additional_tokens_at_last > 0:
-            self.additional_tokens = nn.Parameter(
-                torch.randn((additional_tokens_at_last, d_model))
-            )
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x: Tensor with shape (batch_size, steps, in_features)
-        returns: Tensor with shape (batch_size, steps//patch_stride + atal, d_model)
+        returns: Tensor with shape (batch_size, steps, in_features)
         """
-        x = self.token_emb(x)
-        if self.atal > 0:
-            x = torch.cat(
-                [x, self.additional_tokens[None, :, :].repeat(x.shape[0], 1, 1)], dim=1
-            )
+        assert (
+            x.shape[1] % self.patch_size == 0
+        ), "x.shape[1] must be divisible by patch_size"
+        x = self.patch_emb(x)
         x = self.pos_emb(x)
         x = self.transformer_encoder(x)
+        x = self.patch_emb.unpatch(x)
 
         return x

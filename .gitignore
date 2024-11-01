@@ -70,3 +70,10 @@ temp/
 *.zip
 *.tar
 *.7z
+
+# logs
+*log/
+*logs/
+*.log.*
+*.tfevents.*
+*.ckpt

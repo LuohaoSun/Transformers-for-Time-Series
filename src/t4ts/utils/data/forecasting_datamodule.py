@@ -102,6 +102,8 @@ class ForecastingDataModule(L.LightningDataModule):
                 self.input_length,
                 self.output_length,
             )
+            assert len(self.train_dataset) > 0
+            assert len(self.val_dataset) > 0
         elif stage == "test" and not hasattr(self, "test_dataset"):
             self.test_data = self.csv_data.iloc[
                 int(
@@ -115,6 +117,7 @@ class ForecastingDataModule(L.LightningDataModule):
                 self.input_length,
                 self.output_length,
             )
+            assert len(self.test_dataset) > 0
         else:
             raise ValueError("Invalid stage")
 

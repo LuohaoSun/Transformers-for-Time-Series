@@ -66,13 +66,13 @@ class ForecastingTrainer(TrainerBase):
             version=self.version,
         )
         callbacks = [
+            LogLoss(),
             ViAndLog(every_n_epochs=self.vi_every_n_epochs),
             ComputeMetricsAndLog(),
             EarlyStopping(monitor="val_loss", patience=self.early_stopping_patience),
             ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
-            RichProgressBar(),
+            # RichProgressBar(),
             RichModelSummary(),
-            LogLoss(),
         ]
         trainer = L.Trainer(
             max_epochs=self.max_epochs,

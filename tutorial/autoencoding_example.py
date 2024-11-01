@@ -14,9 +14,9 @@ def main():
     datamodule = FaultPredictionDataModule(batch_size=40)
 
     # Step 2. Choose a backbone
-    from t4ts.models import PatchTSTBackbone
+    from t4ts.models import PatchTransformer
 
-    backbone = PatchTSTBackbone(
+    backbone = PatchTransformer(
         in_features=1,
         d_model=64,
         patch_size=16,

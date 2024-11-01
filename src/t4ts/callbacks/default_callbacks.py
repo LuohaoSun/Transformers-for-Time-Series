@@ -194,7 +194,7 @@ class LogLoss(L.Callback):
     ) -> None:
 
         pl_module.log(
-            "train_loss", outputs["loss"], on_step=True, on_epoch=False, prog_bar=True
+            "train_loss", outputs["loss"], on_step=True, on_epoch=True, prog_bar=True
         )
 
         return super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx)
@@ -209,7 +209,7 @@ class LogLoss(L.Callback):
     ) -> None:
 
         pl_module.log(
-            "val_loss", outputs["loss"], on_step=False, on_epoch=True, prog_bar=True
+            "val_loss", outputs["loss"], on_step=True, on_epoch=True, prog_bar=True
         )
 
         return super().on_validation_batch_end(

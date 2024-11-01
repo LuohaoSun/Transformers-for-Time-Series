@@ -21,21 +21,21 @@ datamodule = ForecastingDataModule(
     output_length=OUTPUT_LENGTH,
     batch_size=64,
     num_workers=7,
-    train_val_test_split=(0.7, 0.2, 0.1),
+    train_val_test_split=(0.6, 0.2, 0.2),
     normalization="zscore",
 )
 
 model = LSTMModel(
     in_features=NUM_STATIONS,
-    hidden_features=64,
+    hidden_features=128,
     out_features=NUM_STATIONS,
-    num_layers=2,
+    num_layers=8,
     bidirectional=True,
 )
 
 trainer = ForecastingTrainer(
     max_epochs=1000,
-    early_stopping_patience=10,
+    early_stopping_patience=50,
     version=f"LSTM-{INPUT_LENGTH}-{OUTPUT_LENGTH}-{int(time.time())}",
 )
 trainer.fit(model=model, datamodule=datamodule)
