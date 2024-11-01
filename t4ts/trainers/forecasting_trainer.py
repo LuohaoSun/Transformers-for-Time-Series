@@ -11,16 +11,12 @@ from torch import Tensor
 from torch.nn import Parameter
 from torch.optim import Optimizer
 
-from ..callbacks.default_callbacks import (
-    EarlyStopping,
-    LogLoss,
-    ModelCheckpoint,
-    RichModelSummary,
-    RichProgressBar,
-)
+from ..callbacks.default_callbacks import (EarlyStopping, LogLoss,
+                                           ModelCheckpoint, RichModelSummary,
+                                           RichProgressBar)
 from ..callbacks.forecasting_callbacks import ComputeMetricsAndLog, ViAndLog
-from .trainer_base import TrainerBase
 from ..utils import get_loss_fn
+from .trainer_base import TrainerBase
 
 
 class ForecastingTrainer(TrainerBase):

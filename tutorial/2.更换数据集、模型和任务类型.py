@@ -29,7 +29,7 @@ def main():
     )
 
     # 第2步：根据喜好选择骨干模型。此处使用LSTM骨干，指定输入特征数为276，隐藏特征数为128，自回归步数为6，层数为2。
-    from t4ts.backbones import LSTMBackbone
+    from t4ts.models import LSTMBackbone
 
     backbone = LSTMBackbone(
         in_features=NUM_STATIONS,

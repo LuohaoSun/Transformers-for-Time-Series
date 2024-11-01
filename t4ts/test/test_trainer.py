@@ -6,7 +6,7 @@ import time
 
 import tensorboard
 
-from t4ts.backbones.lstm import LSTMModel
+from t4ts.models.lstm import LSTMModel
 from t4ts.trainers.forecasting_trainer import ForecastingTrainer
 from t4ts.utils.data import ForecastingDataModule
 

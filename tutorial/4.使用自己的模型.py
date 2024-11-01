@@ -6,7 +6,7 @@ sys.path.append("..")
 
 def main():
     # 在【快速上手】中，我们已经使用了MLP骨干进行了一个简单的分类任务：
-    from t4ts.backbones import MLPBackbone
+    from t4ts.models import MLPBackbone
 
     backbone1 = MLPBackbone(
         in_seq_len=4096,
@@ -16,7 +16,7 @@ def main():
     )
 
     # 在【更换数据集、模型和任务类别】中，我们使用了LSTM骨干进行了一个简单的序列预测任务：
-    from t4ts.backbones import LSTMBackbone
+    from t4ts.models import LSTMBackbone
 
     backbone2 = LSTMBackbone(
         in_features=276,

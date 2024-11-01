@@ -6,12 +6,8 @@ import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
-from torchmetrics import (
-    ExplainedVariance,
-    MeanAbsoluteError,
-    MeanAbsolutePercentageError,
-    R2Score,
-)
+from torchmetrics import (ExplainedVariance, MeanAbsoluteError,
+                          MeanAbsolutePercentageError, R2Score)
 
 from ..utils.visualization import SeriesPlotter
 

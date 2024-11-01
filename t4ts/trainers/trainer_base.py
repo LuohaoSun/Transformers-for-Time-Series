@@ -1,15 +1,14 @@
 # Author: Sun LuoHao
 # All rights reserved
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Mapping, Tuple, Annotated
+from typing import Annotated, Any, Callable, Iterable, Mapping, Tuple
 
 import lightning as L
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Parameter
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import CosineAnnealingLR, LRScheduler
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 
 
