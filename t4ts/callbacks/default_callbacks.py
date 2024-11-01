@@ -11,7 +11,7 @@ from rich import print
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from ...utils import find_process_by_port, print_dict
+from ..utils import find_process_by_port, print_dict
 
 __all__ = ["get_default_callbacks"]
 

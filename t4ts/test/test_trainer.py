@@ -2,10 +2,12 @@ import sys
 
 sys.path.append(".")
 
+import time
+
 import tensorboard
 
 from t4ts.backbones.lstm import LSTMModel
-from t4ts.frameworks.forecasting_trainer import ForecastingTrainer
+from t4ts.trainers.forecasting_trainer import ForecastingTrainer
 from t4ts.utils.data import ForecastingDataModule
 
 INPUT_LENGTH = 256  # 输入序列长度
@@ -34,7 +36,7 @@ model = LSTMModel(
 trainer = ForecastingTrainer(
     max_epochs=1000,
     early_stopping_patience=10,
-    version=f"LSTM-{INPUT_LENGTH}-{OUTPUT_LENGTH}",
+    version=f"LSTM-{INPUT_LENGTH}-{OUTPUT_LENGTH}-{int(time.time())}",
 )
 trainer.fit(model=model, datamodule=datamodule)
 trainer.test(model=model, datamodule=datamodule)

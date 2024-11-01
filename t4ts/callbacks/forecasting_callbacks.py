@@ -1,19 +1,19 @@
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Union
+from typing import Mapping, Tuple
 
 import lightning as L
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
-from matplotlib.figure import Figure
-from rich import print
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
-from torchmetrics import (ExplainedVariance, MeanAbsoluteError,
-                          MeanAbsolutePercentageError, R2Score)
+from torchmetrics import (
+    ExplainedVariance,
+    MeanAbsoluteError,
+    MeanAbsolutePercentageError,
+    R2Score,
+)
 
-from ...utils.visualization import SeriesPlotter
+from ..utils.visualization import SeriesPlotter
 
 __all__ = [
     "ComputeMetricsAndLog",
@@ -32,9 +32,9 @@ class ComputeMetricsAndLog(L.Callback):
             {
                 "RMSE": RootMeanSquaredError(),
                 "MAE": MeanAbsoluteError(),
-                "mape": MeanAbsolutePercentageError(),
-                "r2": R2Score(),
-                "ev": ExplainedVariance(),
+                "MAPE": MeanAbsolutePercentageError(),
+                "R2": R2Score(),
+                "EV": ExplainedVariance(),
             }
         )
 
@@ -42,7 +42,7 @@ class ComputeMetricsAndLog(L.Callback):
         self, trainer: L.Trainer, outputs: Mapping[str, Tensor], stage: str
     ) -> None:
 
-        y_hat, y = outputs["y_hat"], outputs["y"]
+        y_hat, y = outputs["output"], outputs["target"]
         self.metric_funcs.to(y_hat.device)
         metrics = {
             f"{stage}_{m_name}": m_func(y_hat, y)
@@ -76,15 +76,18 @@ class ViAndLog(L.Callback):
         trainer: L.Trainer,
         pl_module: L.LightningModule,
         outputs: Mapping[str, Tensor],
-        batch: Iterable[Tensor],
+        batch: Tuple[Tensor, Tensor],
         batch_idx: int,
         dataloader_idx: int = 0,
     ) -> None:
-        series_dict = {"ground truth": outputs["y"], "predicted": outputs["y_hat"]}
-        img = SeriesPlotter.plot_series(series_dict)
-
-        tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
-        tb_writer.add_figure(f"epoch {trainer.current_epoch}", img)
+        if trainer.current_epoch % self.every_n_epochs == 0 and batch_idx == 0:
+            series_dict = {
+                "ground truth": outputs["target"],
+                "predicted": outputs["output"],
+            }
+            img = SeriesPlotter.plot_series(series_dict)
+            tb_writer: SummaryWriter = trainer.logger.experiment  # type: ignore
+            tb_writer.add_figure(f"Visualization", img, trainer.global_step)
         return super().on_validation_batch_end(
             trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
         )

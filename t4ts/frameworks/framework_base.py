@@ -13,8 +13,8 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 
-from .callbacks.default_callbacks import get_default_callbacks
-from .utils import get_loss_fn
+from ..callbacks.default_callbacks import get_default_callbacks
+from ..utils import get_loss_fn
 
 
 class FrameworkBase(L.LightningModule, ABC):

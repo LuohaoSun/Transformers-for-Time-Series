@@ -9,8 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from ..frameworks.utils import get_loss_fn
-from .callbacks.autoencoding_callbacks import ViAndLog
+from ..utils import get_loss_fn
+from ..callbacks.autoencoding_callbacks import ViAndLog
 from .framework_base import FrameworkBase
 
 

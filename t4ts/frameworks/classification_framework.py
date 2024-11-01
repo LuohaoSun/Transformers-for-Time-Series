@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from .callbacks.classification_callbacks import \
+from ..callbacks.classification_callbacks import \
     ComputeAndLogMetrics2Tensorboard
 from .framework_base import FrameworkBase
 

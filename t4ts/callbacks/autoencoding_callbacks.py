@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from ...utils.visualization import SeriesPlotter
+from ..utils.visualization import SeriesPlotter
 
 
 class ViAndLog(L.Callback):

@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from .callbacks.autoencoding_callbacks import ViAndLog
-from .callbacks.forecasting_callbacks import ComputeMetricsAndLog
+from ..callbacks.autoencoding_callbacks import ViAndLog
+from ..callbacks.forecasting_callbacks import ComputeMetricsAndLog
 from .framework_base import FrameworkBase
 
 

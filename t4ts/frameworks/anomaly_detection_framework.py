@@ -9,11 +9,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from .callbacks.autoencoding_callbacks import ViAndLog
-from .callbacks.classification_callbacks import \
+from ..callbacks.autoencoding_callbacks import ViAndLog
+from ..callbacks.classification_callbacks import \
     ComputeAndLogMetrics2Tensorboard
 from .framework_base import FrameworkBase
-from .utils import get_loss_fn
+from ..utils import get_loss_fn
 
 
 class AnomalyDetectionFramework(FrameworkBase):

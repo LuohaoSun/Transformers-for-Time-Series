@@ -7,37 +7,37 @@ def get_loss_fn(loss_fn: Callable | str) -> Callable:
 
     if isinstance(loss_fn, Callable):
         return loss_fn
-    elif loss_fn == "mse":
+    elif loss_fn.lower() in ["mse", "l2", "l2loss"]:
         return nn.MSELoss()
-    elif loss_fn == "cross_entropy":
+    elif loss_fn.lower() == "cross_entropy":
         return nn.CrossEntropyLoss()
-    elif loss_fn == "nll":
+    elif loss_fn.lower() == "nll":
         return nn.NLLLoss()
-    elif loss_fn == "l1" or loss_fn == "mae":
+    elif loss_fn.lower() in ["mae", "l1", "l1loss"]:
         return nn.L1Loss()
-    elif loss_fn == "kl_div":
+    elif loss_fn.lower() == "kl_div":
         return nn.KLDivLoss()
-    elif loss_fn == "bce":
+    elif loss_fn.lower() == "bce":
         return nn.BCELoss()
-    elif loss_fn == "bce_with_logits":
+    elif loss_fn.lower() == "bce_with_logits":
         return nn.BCEWithLogitsLoss()
-    elif loss_fn == "margin_ranking":
+    elif loss_fn.lower() == "margin_ranking":
         return nn.MarginRankingLoss()
-    elif loss_fn == "hinge_embedding":
+    elif loss_fn.lower() == "hinge_embedding":
         return nn.HingeEmbeddingLoss()
-    elif loss_fn == "multi_margin":
+    elif loss_fn.lower() == "multi_margin":
         return nn.MultiMarginLoss()
-    elif loss_fn == "smooth_l1":
+    elif loss_fn.lower() == "smooth_l1":
         return nn.SmoothL1Loss()
-    elif loss_fn == "soft_margin":
+    elif loss_fn.lower() == "soft_margin":
         return nn.SoftMarginLoss()
-    elif loss_fn == "multi_label_soft_margin":
+    elif loss_fn.lower() == "multi_label_soft_margin":
         return nn.MultiLabelSoftMarginLoss()
-    elif loss_fn == "cosine_embedding":
+    elif loss_fn.lower() == "cosine_embedding":
         return nn.CosineEmbeddingLoss()
-    elif loss_fn == "multi_label_margin":
+    elif loss_fn.lower() == "multi_label_margin":
         return nn.MultiLabelMarginLoss()
-    elif loss_fn == "triplet_margin":
+    elif loss_fn.lower() == "triplet_margin":
         return nn.TripletMarginLoss()
     else:
         raise ValueError(f"loss_fn {loss_fn} not supported.")
