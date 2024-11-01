@@ -4,15 +4,16 @@ import sys
 
 sys.path.append(".")
 sys.path.append("..")
+from math import pi, sin
+
 import torch
-from math import sin, pi
 
 
 def main():
 
     # Example usage
-    from t4ts.utils.visualization import SeriesPlotter
     from t4ts.pretrained.chronos import Chronos
+    from t4ts.utils.visualization import SeriesPlotter
 
     model = Chronos(size="tiny",task="forecasting")
     sin_wave = (

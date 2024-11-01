@@ -1,16 +1,8 @@
 # Author: Sun LuoHao
 # All rights reserved
-import lightning as L
-from typing import (
-    Mapping,
-    Union,
-    Callable,
-    Dict,
-    Any,
-    Iterable,
-    final,
-)
+from typing import Any, Callable, Dict, Iterable, Mapping, Union, final
 
+import lightning as L
 from torch import Tensor
 from torch.utils.data import DataLoader
 

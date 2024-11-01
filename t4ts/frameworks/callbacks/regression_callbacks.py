@@ -1,16 +1,13 @@
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Union
+
 import lightning as L
 import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
-from torch import Tensor
 from rich import print
-from torchmetrics import (
-    MeanAbsoluteError,
-    MeanSquaredError,
-    MeanAbsolutePercentageError,
-    R2Score,
-    ExplainedVariance,
-)
+from torch import Tensor
+from torchmetrics import (ExplainedVariance, MeanAbsoluteError,
+                          MeanAbsolutePercentageError, MeanSquaredError,
+                          R2Score)
 
 
 class ComputeAndLogMetrics2Tensorboard(L.Callback):

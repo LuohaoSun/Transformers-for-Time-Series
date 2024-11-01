@@ -1,10 +1,12 @@
-import lightning as L
-import torch.nn.functional as F
-import torch.nn as nn
-import torch
-from typing import Mapping, Iterable, Tuple, Callable, Optional, final
-from torch import Tensor
 from abc import ABC, abstractmethod
+from typing import Callable, Iterable, Mapping, Optional, Tuple, final
+
+import lightning as L
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch import Tensor
+
 from ..utils import get_loss_fn
 
 

@@ -11,14 +11,15 @@ To use Chronos, you need to install the Chronos library:
 pip install git+https://github.com/amazon-science/chronos-forecasting.git
 """
 
-from chronos import ChronosPipeline
+from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
+                    Union)
 
+import lightning as L
 import torch
 import torch.nn as nn
-import lightning as L
-
+from chronos import ChronosPipeline
 from torch import Tensor
-from typing import Any, Dict, Iterable, Mapping, Union, Callable, Optional, List
+
 from .pretrained_base import PretrainedBase
 
 

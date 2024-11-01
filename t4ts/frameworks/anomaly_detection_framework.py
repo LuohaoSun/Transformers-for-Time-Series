@@ -1,18 +1,19 @@
 # Author: Sun LuoHao
 # All rights reserved
 
+from typing import Callable, Iterable, Mapping, Optional, Tuple
+
 import lightning as L
-import torch.nn.functional as F
-import torch.nn as nn
 import torch
-from typing import Mapping, Iterable, Tuple, Callable, Optional
+import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
-from .utils import get_loss_fn
-
-from .framework_base import FrameworkBase
 from .callbacks.autoencoding_callbacks import ViAndLog
-from .callbacks.classification_callbacks import ComputeAndLogMetrics2Tensorboard
+from .callbacks.classification_callbacks import \
+    ComputeAndLogMetrics2Tensorboard
+from .framework_base import FrameworkBase
+from .utils import get_loss_fn
 
 
 class AnomalyDetectionFramework(FrameworkBase):

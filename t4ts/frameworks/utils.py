@@ -1,10 +1,9 @@
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Union
+
 import lightning as L
-import torch.nn as nn
 import torch
-
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
+import torch.nn as nn
 from torch import Tensor
-
 
 
 def get_loss_fn(loss_fn: Callable | str) -> Callable:

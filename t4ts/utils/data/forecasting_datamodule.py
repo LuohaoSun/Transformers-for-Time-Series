@@ -1,7 +1,8 @@
 from typing import Tuple
+
 import lightning as L
-import pandas as pd
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
 
@@ -123,7 +124,7 @@ class ForecastingDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             num_workers=self.num_workers,
-            persistent_workers=True,
+            persistent_workers=True if self.num_workers > 0 else False,
         )
 
     def val_dataloader(self):
@@ -132,7 +133,7 @@ class ForecastingDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            persistent_workers=True,
+            persistent_workers=True if self.num_workers > 0 else False,
         )
 
     def test_dataloader(self):
@@ -141,7 +142,7 @@ class ForecastingDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            persistent_workers=True,
+            persistent_workers=True if self.num_workers > 0 else False,
         )
 
 

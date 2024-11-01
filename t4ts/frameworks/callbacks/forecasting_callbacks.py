@@ -1,22 +1,18 @@
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Union
+
 import lightning as L
-import torch.nn as nn
-import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
+import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
-from torch import Tensor
-from rich import print
-from torchmetrics import (
-    MeanAbsoluteError,
-    MeanAbsolutePercentageError,
-    R2Score,
-    ExplainedVariance,
-)
 from matplotlib.figure import Figure
-from typing import Mapping, Iterable
+from rich import print
 from torch import Tensor
 from torch.utils.tensorboard.writer import SummaryWriter
+from torchmetrics import (ExplainedVariance, MeanAbsoluteError,
+                          MeanAbsolutePercentageError, R2Score)
+
 from ...utils.visualization import SeriesPlotter
 
 __all__ = [

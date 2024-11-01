@@ -3,6 +3,7 @@
 """
 from torch import nn
 
+
 class GraphConvolution(nn.Module):
     pass
 

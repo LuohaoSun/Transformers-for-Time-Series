@@ -1,5 +1,6 @@
-from t4ts.utils.data import ForecastingDataModule
 import torch
+
+from t4ts.utils.data import ForecastingDataModule
 
 
 class BJInflowDataModule(ForecastingDataModule):
@@ -32,8 +33,8 @@ def get_adj_matrix():
     返回值：
     adj_matrix (torch.Tensor)：邻接矩阵 (276, 276)。
     """
-    import pandas as pd
     import numpy as np
+    import pandas as pd
     adj=pd.read_csv('data/BJinflow/adjacency_with_label.csv')
     adj_matrix=torch.from_numpy(adj.values)
     return adj_matrix

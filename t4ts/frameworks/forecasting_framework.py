@@ -1,13 +1,15 @@
 # Author: Sun LuoHao
 # All rights reserved
-import torch.nn.functional as F
-import torch.nn as nn
+from typing import Any, Callable, Iterable, Mapping
+
 import lightning as L
-from typing import Mapping, Iterable, Callable, Any
+import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
-from .framework_base import FrameworkBase
-from .callbacks.forecasting_callbacks import ComputeMetricsAndLog
+
 from .callbacks.autoencoding_callbacks import ViAndLog
+from .callbacks.forecasting_callbacks import ComputeMetricsAndLog
+from .framework_base import FrameworkBase
 
 
 class ForecastingFramework(FrameworkBase):

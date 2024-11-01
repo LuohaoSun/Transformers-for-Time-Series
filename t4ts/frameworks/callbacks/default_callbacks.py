@@ -1,19 +1,17 @@
-import lightning as L
-import subprocess
 import re
-from typing import Mapping
-from torch import Tensor
-from lightning.pytorch.callbacks import (
-    ModelCheckpoint,
-    RichModelSummary,
-    RichProgressBar,
-    EarlyStopping,
-)
-from rich import print
-from torch.utils.tensorboard.writer import SummaryWriter
-from lightning.pytorch.loggers import TensorBoardLogger
-from ...utils import print_dict, find_process_by_port
 import socket
+import subprocess
+from typing import Mapping
+
+import lightning as L
+from lightning.pytorch.callbacks import (EarlyStopping, ModelCheckpoint,
+                                         RichModelSummary, RichProgressBar)
+from lightning.pytorch.loggers import TensorBoardLogger
+from rich import print
+from torch import Tensor
+from torch.utils.tensorboard.writer import SummaryWriter
+
+from ...utils import find_process_by_port, print_dict
 
 __all__ = ["get_default_callbacks"]
 

@@ -1,17 +1,9 @@
 # Author: Sun LuoHao
 # All rights reserved
-import lightning as L
+from typing import Any, Callable, Dict, Iterable, Mapping, Union, final
 
+import lightning as L
 from torch import Tensor
-from typing import (
-    Mapping,
-    Union,
-    Callable,
-    Dict,
-    Any,
-    Iterable,
-    final,
-)
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 

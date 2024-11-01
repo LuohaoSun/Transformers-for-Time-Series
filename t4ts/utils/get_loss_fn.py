@@ -1,7 +1,6 @@
-import torch.nn as nn
-
 from typing import Callable
 
+import torch.nn as nn
 
 
 def get_loss_fn(loss_fn: Callable | str) -> Callable:

@@ -1,13 +1,14 @@
-from typing import Tuple
+import os
+from typing import IO, Any, Dict, Iterable, Optional, Tuple, Union, cast
+
 import lightning as L
 import pandas as pd
-from rich import print
 import torch
-import os
-from tqdm import tqdm
-from .sliding_window_dataset import SlidingWindowDataset
-from typing import IO, Any, Dict, Iterable, Optional, Union, cast
+from rich import print
 from torch.utils.data import DataLoader, Dataset, IterableDataset, random_split
+from tqdm import tqdm
+
+from .sliding_window_dataset import SlidingWindowDataset
 
 
 class ClassificationDataModule(L.LightningDataModule):

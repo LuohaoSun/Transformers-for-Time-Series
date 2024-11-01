@@ -6,15 +6,18 @@
 # To use TimeGPT, you need to install the Nixtla library:
 # pip install nixtla
 
+import warnings
+from typing import Any, Callable, Dict, Iterable, Mapping, Union
+
+import lightning as L
+import pandas as pd
 import torch
 import torch.nn as nn
-import lightning as L
-import warnings
-import pandas as pd
-from torch import Tensor
-from typing import Any, Dict, Iterable, Mapping, Union, Callable
 from nixtla.nixtla_client import NixtlaClient
+from torch import Tensor
+
 from .pretrained_base import PretrainedBase
+
 
 class TimeGPT(PretrainedBase):
     def __init__(

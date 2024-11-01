@@ -1,6 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
+import numpy as np
+from torch.utils.data import DataLoader, Dataset
 
 
 class sin_dataset_univariate(Dataset):

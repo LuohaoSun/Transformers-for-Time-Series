@@ -1,8 +1,9 @@
+import lightning as L
 import torch
 import torch.nn as nn
-import lightning as L
-from .components import token_embedding as TE
 from torch import Tensor
+
+from .components import token_embedding as TE
 
 
 class LSTMBackbone(L.LightningModule):
@@ -33,7 +34,7 @@ class LSTMBackbone(L.LightningModule):
         )
         self.lstm = nn.LSTM(
             input_size=hidden_features,
-            hidden_size=hidden_features,
+            hidden_size=hidden_features // (2 if bidirectional else 1),
             num_layers=num_layers,
             dropout=dropout,
             bidirectional=bidirectional,
@@ -54,3 +55,27 @@ class LSTMBackbone(L.LightningModule):
             step_out, hidden_state = self.lstm(step_in, hidden_state)
             x = torch.cat([x, step_out], dim=1)
         return x
+
+
+class LSTMModel(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        hidden_features: int,
+        out_features: int,
+        num_layers: int = 1,
+        dropout: float = 0,
+        bidirectional: bool = False,
+    ) -> None:
+        super().__init__()
+        self.backbone = LSTMBackbone(
+            in_features=in_features,
+            hidden_features=hidden_features,
+            num_layers=num_layers,
+            dropout=dropout,
+            bidirectional=bidirectional,
+        )
+        self.output_layer = nn.Linear(hidden_features, out_features)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.output_layer(self.backbone(x))

@@ -1,5 +1,5 @@
-from rich.table import Table
 from rich import print
+from rich.table import Table
 
 
 def print_dict(data, header: tuple[str, str] = ("Key", "Value")):

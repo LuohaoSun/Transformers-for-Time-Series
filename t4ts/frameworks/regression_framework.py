@@ -1,18 +1,17 @@
 # Author: Sun LuoHao
 # All rights reserved
 
+from typing import Any, Callable, Iterable, Mapping
+
 import lightning as L
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
 import numpy as np
-from typing import Mapping, Iterable, Callable, Any
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
+from .callbacks.regression_callbacks import ComputeAndLogMetrics2Tensorboard
 from .framework_base import FrameworkBase
-from .callbacks.regression_callbacks import (
-    ComputeAndLogMetrics2Tensorboard,
-)
 
 
 class RegressionFramework(FrameworkBase):

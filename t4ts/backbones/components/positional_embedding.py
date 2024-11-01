@@ -3,8 +3,9 @@
 返回包含位置信息的嵌入表达,而不是位置编码(为了兼容加性\乘性等各种编码方式).
 """
 
-import torch
 import math
+
+import torch
 import torch.nn as nn
 
 

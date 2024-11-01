@@ -1,8 +1,9 @@
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch_geometric.nn as gnn
 from torch import Tensor
-from typing import Any
 
 
 class STBackbone(nn.Module):

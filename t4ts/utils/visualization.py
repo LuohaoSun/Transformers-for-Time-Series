@@ -1,10 +1,10 @@
-from matplotlib import colors
-import numpy as np
-from torch import Tensor
-from typing import Union, List, Dict
-from matplotlib.figure import Figure
+from typing import Dict, List, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import colors
+from matplotlib.figure import Figure
+from torch import Tensor
 
 
 class SeriesPlotter:

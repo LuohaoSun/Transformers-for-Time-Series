@@ -8,14 +8,15 @@ pip install momentfm
 ```
 """
 
-from momentfm import MOMENTPipeline
+from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
+                    Union)
 
+import lightning as L
 import torch
 import torch.nn as nn
-import lightning as L
-
+from momentfm import MOMENTPipeline
 from torch import Tensor
-from typing import Any, Dict, Iterable, Mapping, Union, Callable, Optional, List
+
 from .pretrained_base import PretrainedBase
 
 MODEL = "AutonLab/MOMENT-1-large"

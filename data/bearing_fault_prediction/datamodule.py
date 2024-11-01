@@ -1,15 +1,15 @@
-from typing import Any, Dict, Optional, Tuple, Union, Callable
-from lightning import LightningDataModule
-from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
-from torch.utils.data import DataLoader, Dataset
-from torch import Tensor
-import torch.functional as F
-import numpy as np
 import os
+from typing import Any, Callable, Dict, Optional, Tuple, Union
+
+import numpy as np
 import torch
+import torch.functional as F
 import tqdm
+from lightning import LightningDataModule
 from rich import print
 from rich.progress import Progress
+from torch import Tensor
+from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
 
 
 class FaultPredictionDataModule(LightningDataModule):

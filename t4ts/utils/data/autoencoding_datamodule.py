@@ -1,8 +1,10 @@
 import os
 from typing import Tuple
-from torch import Tensor
-from torch.utils.data import Dataset, DataLoader, random_split
+
 import lightning as L
+from torch import Tensor
+from torch.utils.data import DataLoader, Dataset, random_split
+
 from ...utils.data.sliding_window_dataset import SlidingWindowDataset
 
 

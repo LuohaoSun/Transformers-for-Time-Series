@@ -1,5 +1,1 @@
-from . import backbones
-from . import frameworks
-from . import pretrained
-from . import utils
-
+from . import backbones, frameworks, pretrained, utils

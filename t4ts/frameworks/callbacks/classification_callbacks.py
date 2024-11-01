@@ -1,9 +1,10 @@
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Union
+
 import lightning as L
 import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
-from typing import Mapping, Union, Optional, Callable, Dict, Any, Iterable
-from torch import Tensor
 from rich import print
+from torch import Tensor
 from torchmetrics import Accuracy, F1Score, Precision, Recall
 
 

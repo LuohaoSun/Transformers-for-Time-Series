@@ -1,11 +1,12 @@
 from typing import Tuple
+
 import lightning as L
-import pandas as pd
 import numpy as np
+import pandas as pd
 import torch
-from torch.utils.data import DataLoader, Dataset, ConcatDataset
-from torch import Tensor
 from rich.progress import Progress
+from torch import Tensor
+from torch.utils.data import ConcatDataset, DataLoader, Dataset
 
 
 class SlidingWindowDataset(Dataset):

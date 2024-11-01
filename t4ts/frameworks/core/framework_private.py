@@ -1,23 +1,16 @@
 # Author: Sun LuoHao
 # All rights reserved
-import lightning as L
-import torch.nn as nn
-import torch
+from typing import Any, Callable, Dict, Iterable, Mapping, Union, final
 
+import lightning as L
+import torch
+import torch.nn as nn
 from lightning.pytorch.loggers import TensorBoardLogger
-from typing import (
-    Mapping,
-    Union,
-    Callable,
-    Dict,
-    Any,
-    Iterable,
-    final,
-)
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from ..callbacks.default_callbacks import get_default_callbacks
+
 from ...utils import get_loss_fn
+from ..callbacks.default_callbacks import get_default_callbacks
 
 """
 框架的私有属性和方法，主要在调用公共方法fit时初始化。
