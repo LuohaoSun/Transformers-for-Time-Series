@@ -18,6 +18,7 @@ class PatchTransformer(L.LightningModule):
         d_model: int,
         out_features: int,
         num_layers: int,
+        recurrent_times: int=1,
         dropout: float = 0.1,
         nhead: int = 4,
         activation: str | Callable[[Tensor], Tensor] = "gelu",
@@ -43,14 +44,15 @@ class PatchTransformer(L.LightningModule):
         super().__init__()
 
         self.d_model = d_model
+        self.recurrent_times = recurrent_times
         self.patch_emb = TE.PatchEmbedding(
             in_features=in_features,
             d_model=d_model,
             patch_size=patch_size,
-            out_features=out_features,
+            out_features=out_features
         )
         self.patch_size = patch_size
-        self.pos_emb = PE.RotaryPosEmbedding(d_model=d_model, max_len=1024)
+        self.pos_emb = PE.SinPosEmbedding(d_model=d_model, max_len=1024)
         transformer_encoder_layer = nn.TransformerEncoderLayer(
             d_model=d_model,
             nhead=nhead,
@@ -74,7 +76,8 @@ class PatchTransformer(L.LightningModule):
         ), "x.shape[1] must be divisible by patch_size"
         x = self.patch_emb(x)
         x = self.pos_emb(x)
-        x = self.transformer_encoder(x)
+        for _ in range(self.recurrent_times):
+            x = self.transformer_encoder(x)
         x = self.patch_emb.unpatch(x)
 
         return x

@@ -4,7 +4,7 @@ import lightning as L
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 
 
 class ForecastingDataModule(L.LightningDataModule):
@@ -72,6 +72,12 @@ class ForecastingDataModule(L.LightningDataModule):
             )
         else:
             pass
+        self.dataset = ForecastingDataset(
+            self.csv_data.to_numpy(),
+            self.stride,
+            self.input_length,
+            self.output_length,
+        )
         return
 
     def setup(self, stage: str | None = None):
@@ -81,42 +87,12 @@ class ForecastingDataModule(L.LightningDataModule):
         assert stage in (None, "fit", "validate", "test", "predict")
 
         if stage == "fit" and not hasattr(self, "train_dataset"):
-            self.train_data = self.csv_data.iloc[
-                : int(len(self.csv_data) * self.train_val_test_split[0])
-            ]
-            self.train_dataset = ForecastingDataset(
-                self.train_data.to_numpy(),
-                self.stride,
-                self.input_length,
-                self.output_length,
-            )
-            self.val_data = self.csv_data.iloc[
-                int(len(self.csv_data) * self.train_val_test_split[0]) : int(
-                    len(self.csv_data)
-                    * (self.train_val_test_split[0] + self.train_val_test_split[1])
-                )
-            ]
-            self.val_dataset = ForecastingDataset(
-                self.val_data.to_numpy(),
-                self.stride,
-                self.input_length,
-                self.output_length,
+            self.train_dataset, self.val_dataset, self.test_dataset = random_split(
+                self.dataset, self.train_val_test_split
             )
             assert len(self.train_dataset) > 0
             assert len(self.val_dataset) > 0
-        elif stage == "test" and not hasattr(self, "test_dataset"):
-            self.test_data = self.csv_data.iloc[
-                int(
-                    len(self.csv_data)
-                    * (self.train_val_test_split[0] + self.train_val_test_split[1])
-                ) :
-            ]
-            self.test_dataset = ForecastingDataset(
-                self.test_data.to_numpy(),
-                self.stride,
-                self.input_length,
-                self.output_length,
-            )
+        elif stage == "test":
             assert len(self.test_dataset) > 0
         else:
             raise ValueError("Invalid stage")

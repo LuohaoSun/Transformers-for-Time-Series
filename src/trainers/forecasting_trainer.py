@@ -11,9 +11,13 @@ from torch import Tensor
 from torch.nn import Parameter
 from torch.optim import Optimizer
 
-from ..callbacks.default_callbacks import (EarlyStopping, LogLoss,
-                                           ModelCheckpoint, RichModelSummary,
-                                           RichProgressBar)
+from ..callbacks.default_callbacks import (
+    EarlyStopping,
+    LogLoss,
+    ModelCheckpoint,
+    RichModelSummary,
+    RichProgressBar,
+)
 from ..callbacks.forecasting_callbacks import ComputeMetricsAndLog, ViAndLog
 from ..utils import get_loss_fn
 from .trainer_base import TrainerBase
@@ -34,10 +38,13 @@ class ForecastingTrainer(TrainerBase):
         lr: float = 1e-3,
         loss_fn: str | Callable[[Tensor, Tensor], Tensor] = "mse",
         optimizer: str = "adam",
+        weight_decay: float = 0.0,
         # callbacks params:
         vi_every_n_epochs: int = 20,
         early_stopping_patience: int = 10,
         # Trainer params:
+        gradient_clip_algorithm: str | None = None,
+        gradient_clip_val: float | None = None,
         accelerator: str = "auto",
         devices: list[int] | str | int = "auto",
         precision: int | str = 32,
@@ -49,11 +56,14 @@ class ForecastingTrainer(TrainerBase):
         self.lr = lr
         self.loss_fn = loss_fn
         self.optimizer = optimizer
+        self.weight_decay = weight_decay
         self.max_epochs = max_epochs
         self.log_save_dir = log_save_dir
         self.version = version
         self.vi_every_n_epochs = vi_every_n_epochs
         self.early_stopping_patience = early_stopping_patience
+        self.gradient_clip_algorithm = gradient_clip_algorithm
+        self.gradient_clip_val = gradient_clip_val
         self.accelerator = accelerator
         self.devices = devices
         self.precision = precision
@@ -71,8 +81,8 @@ class ForecastingTrainer(TrainerBase):
             ComputeMetricsAndLog(),
             EarlyStopping(monitor="val_loss", patience=self.early_stopping_patience),
             ModelCheckpoint(monitor="val_loss", mode="min", save_top_k=1),
-            # RichProgressBar(),
-            RichModelSummary(),
+            RichProgressBar(),
+            RichModelSummary(max_depth=3),
         ]
         trainer = L.Trainer(
             max_epochs=self.max_epochs,
@@ -82,6 +92,8 @@ class ForecastingTrainer(TrainerBase):
             devices=self.devices,
             precision=self.precision,  # type: ignore
             log_every_n_steps=self.log_every_n_steps,
+            gradient_clip_algorithm=self.gradient_clip_algorithm,
+            gradient_clip_val=self.gradient_clip_val,
         )
         return trainer
 
@@ -90,10 +102,12 @@ class ForecastingTrainer(TrainerBase):
 
     def configure_optimizer(self) -> Callable[[Iterable[Parameter]], Optimizer]:
         if self.optimizer.lower() == "adam":
-            return partial(torch.optim.Adam, lr=self.lr)
+            return partial(torch.optim.Adam, lr=self.lr, weight_decay=self.weight_decay)
         elif self.optimizer.lower() == "sgd":
-            return partial(torch.optim.SGD, lr=self.lr)
+            return partial(torch.optim.SGD, lr=self.lr, weight_decay=self.weight_decay)
         elif self.optimizer.lower() == "adamw":
-            return partial(torch.optim.AdamW, lr=self.lr)
+            return partial(
+                torch.optim.AdamW, lr=self.lr, weight_decay=self.weight_decay
+            )
         else:
             raise ValueError(f"Unknown optimizer: {self.optimizer}")

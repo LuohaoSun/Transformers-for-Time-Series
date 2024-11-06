@@ -77,3 +77,4 @@ temp/
 *.log.*
 *.tfevents.*
 *.ckpt
+*.out

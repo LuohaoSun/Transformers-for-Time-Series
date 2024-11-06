@@ -6,10 +6,11 @@ import time
 
 import tensorboard
 from lightning.pytorch import seed_everything
-from src.models.patchTransformer import PatchTransformer
+from src.models.GCNpatchTransformer import GCNPatchTransformer
 from src.trainers.forecasting_trainer import ForecastingTrainer
 from src.utils.data import ForecastingDataModule
 from exp.exp_config import *
+
 
 seed_everything(42)
 
@@ -24,7 +25,8 @@ datamodule = ForecastingDataModule(
     normalization=DATA_NORMALIZATION,
 )
 
-model = PatchTransformer(
+model = GCNPatchTransformer(
+    adj=DATA_ADJ_PATH,
     in_features=DATA_FEATURES,
     patch_size=MODEL_PATCH_SIZE,
     d_model=MODEL_D_MODEL,
@@ -39,11 +41,11 @@ current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 trainer = ForecastingTrainer(
     max_epochs=TRAINER_MAX_EPOCHS,
     lr=TRAINER_LR,
-    weight_decay=TRAINER_WEIGHT_DECAY,
     early_stopping_patience=TRAINER_EARLY_STOPPING_PATIENCE,
+    weight_decay=TRAINER_WEIGHT_DECAY,
     gradient_clip_algorithm=TRAINER_GRADIENT_CLIP_ALGORITHM,
     gradient_clip_val=TRAINER_GRADIENT_CLIP_VAL,
-    version=f"PatchTransformer-{DATA_INPUT_LENGTH}-{DATA_OUTPUT_LENGTH}-{current_time}",
+    version=f"GCNPatchTransformer-{DATA_INPUT_LENGTH}-{DATA_OUTPUT_LENGTH}-{current_time}",
 )
 trainer.fit(model=model, datamodule=datamodule)
 trainer.test(model=model, datamodule=datamodule)

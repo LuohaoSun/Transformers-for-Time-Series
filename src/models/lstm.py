@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from .components import token_embedding as TE
+from .layers import token_embedding as TE
 
 
 class LSTMBackbone(L.LightningModule):
