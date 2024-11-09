@@ -1,0 +1,9 @@
+[submodule "src/external/LargeST"]
+    path = src/external/LargeST
+    url = https://github.com/liuxu77/LargeST.git
+    branch = main
+
+[submodule "src/external/time_series_lib"]
+    path = src/external/time_series_lib
+    url = https://github.com/thuml/Time-Series-Library.git
+    branch = main
