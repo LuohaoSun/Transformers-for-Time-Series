@@ -5,7 +5,7 @@ import lightning as L
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset, random_split
 
-from ...utils.data.sliding_window_dataset import SlidingWindowDataset
+from .sliding_window_dataset import SlidingWindowDataset
 
 
 class AutoEncodingDataModule(L.LightningDataModule):

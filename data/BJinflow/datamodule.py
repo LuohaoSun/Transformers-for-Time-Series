@@ -1,5 +1,4 @@
 import torch
-
 from t4ts.utils.data import ForecastingDataModule
 
 

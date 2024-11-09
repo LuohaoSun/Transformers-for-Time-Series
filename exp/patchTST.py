@@ -6,45 +6,28 @@ sys.path.append("src/time_series_lib")
 import time
 
 import tensorboard
-import torch.nn as nn
 from lightning.pytorch import seed_everything
-from src.time_series_lib.models.PatchTST import Model
-from src.trainers.forecasting_trainer import ForecastingTrainer
-from exp.prepare_data import datamodule
+
 from exp.exp_config import *
+from exp.prepare_data import datamodule
+from src.models.PatchTST import PatchTST
+from src.trainers.forecasting_trainer import ForecastingTrainer
 
 seed_everything(42)
 
-
-class Configs:
-    task_name = "long_term_forecast"
-    seq_len = DATA_INPUT_LENGTH
-    pred_len = DATA_OUTPUT_LENGTH
-    d_model = MODEL_D_MODEL
-    dropout = MODEL_DROPOUT
-    factor = 1
-    n_heads = MODEL_NHEAD
-    d_ff = 4 * MODEL_D_MODEL
-    activation = MODEL_ACTIVATION
-    e_layers = MODEL_NUM_LAYERS
-    enc_in = DATA_FEATURES
-
-
-class TSLModelWrapper(nn.Module):
-    def __init__(self, model: nn.Module):
-        super(TSLModelWrapper, self).__init__()
-        self.model = model
-
-    def forward(self, x):
-        return self.model(x, None, None, None)
-
-
-model = Model(
-    configs=Configs,
+model = PatchTST(
+    seq_len=DATA_INPUT_LENGTH,
+    pred_len=DATA_OUTPUT_LENGTH,
+    d_model=MODEL_D_MODEL,
+    dropout=MODEL_DROPOUT,
     patch_len=MODEL_PATCH_SIZE,
     stride=MODEL_PATCH_STRIDE,
+    n_heads=MODEL_NHEAD,
+    d_ff=MODEL_D_MODEL * 4,
+    activation=MODEL_ACTIVATION,
+    e_layers=MODEL_NUM_LAYERS,
+    enc_in=DATA_FEATURES,
 )
-model = TSLModelWrapper(model)
 
 current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 trainer = ForecastingTrainer(

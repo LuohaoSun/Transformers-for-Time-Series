@@ -1,7 +1,7 @@
 from lightning.pytorch import seed_everything
-from src.utils.data import ForecastingDataModule
-from exp.exp_config import *
 
+from exp.exp_config import *
+from src.utils.data import ForecastingDataModule
 
 seed_everything(42)
 

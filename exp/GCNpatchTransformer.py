@@ -6,10 +6,11 @@ import time
 
 import tensorboard
 from lightning.pytorch import seed_everything
+
+from exp.exp_config import *
+from exp.prepare_data import datamodule
 from src.models.GCNpatchTransformer import GCNPatchTransformer
 from src.trainers.forecasting_trainer import ForecastingTrainer
-from exp.prepare_data import datamodule
-from exp.exp_config import *
 
 seed_everything(42)
 
