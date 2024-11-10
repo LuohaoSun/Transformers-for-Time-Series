@@ -10,12 +10,11 @@ import torch
 
 
 def main():
-
     # Example usage
     from t4ts.pretrained.chronos import Chronos
     from t4ts.utils.visualization import SeriesPlotter
 
-    model = Chronos(size="tiny",task="forecasting")
+    model = Chronos(size="tiny", task="forecasting")
     sin_wave = (
         torch.tensor([sin(x / pi) for x in range(100)]).unsqueeze(-1).unsqueeze(0)
     )

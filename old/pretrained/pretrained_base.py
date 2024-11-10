@@ -11,7 +11,6 @@ from ..utils import get_loss_fn
 
 
 class PretrainedBase(L.LightningModule, ABC):
-
     def __init__(self, task: str) -> None:
         super().__init__()
         # 预训练模型可能没有需要训练的参数，但是为了避免optimizer的报错，需要设置一个参数

@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 框架的公共方法，主要是训练、测试、预测等。
 """
 
+
 class FrameworkBasePublic(L.LightningModule):
     # ==============================
     # 以下是框架公共方法：

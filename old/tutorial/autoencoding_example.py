@@ -6,10 +6,8 @@ from t4ts.utils.visualization import SeriesPlotter
 
 
 def main():
-
     # Step 1. Choose a dataset
-    from data.bearing_fault_prediction.datamodule import \
-        FaultPredictionDataModule
+    from data.bearing_fault_prediction.datamodule import FaultPredictionDataModule
 
     datamodule = FaultPredictionDataModule(batch_size=40)
 

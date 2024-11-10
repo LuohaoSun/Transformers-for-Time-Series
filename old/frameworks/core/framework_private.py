@@ -15,6 +15,8 @@ from ..callbacks.default_callbacks import get_default_callbacks
 """
 框架的私有属性和方法，主要在调用公共方法fit时初始化。
 """
+
+
 class FrameworkBasePrivate(L.LightningModule):
     # ==============================
     # 以下是框架私有方法和属性：

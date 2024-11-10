@@ -10,14 +10,12 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from ..callbacks.autoencoding_callbacks import ViAndLog
-from ..callbacks.classification_callbacks import \
-    ComputeAndLogMetrics2Tensorboard
+from ..callbacks.classification_callbacks import ComputeAndLogMetrics2Tensorboard
 from ..utils import get_loss_fn
 from .framework_base import FrameworkBase
 
 
 class AnomalyDetectionFramework(FrameworkBase):
-
     def __init__(
         self,
         # model params

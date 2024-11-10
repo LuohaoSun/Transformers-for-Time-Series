@@ -15,21 +15,26 @@ from .framework_private import FrameworkBasePrivate
 from .framework_public import FrameworkBasePublic
 
 
-class FrameworkBase(FrameworkBaseOverride, FrameworkBasePrivate, FrameworkBasePublic, ABC):
+class FrameworkBase(
+    FrameworkBaseOverride, FrameworkBasePrivate, FrameworkBasePublic, ABC
+):
     # ==============================
     # 以下是子类需要实现的方法和属性：
 
     @property
     @abstractmethod
-    def backbone(self) -> nn.Module: ...
+    def backbone(self) -> nn.Module:
+        ...
 
     @property
     @abstractmethod
-    def neck(self) -> nn.Module: ...
+    def neck(self) -> nn.Module:
+        ...
 
     @property
     @abstractmethod
-    def head(self) -> nn.Module: ...
+    def head(self) -> nn.Module:
+        ...
 
     @abstractmethod
     def framework_forward(
@@ -112,14 +117,25 @@ class FrameworkBase(FrameworkBaseOverride, FrameworkBasePrivate, FrameworkBasePu
 
     # Don't work in runtime, only for type checking. Use __setattr__ and __getattribute__ instead.
     @backbone.setter
-    def backbone(self, backbone: nn.Module): ...
+    def backbone(self, backbone: nn.Module):
+        ...
+
     @neck.setter
-    def neck(self, neck: nn.Module): ...
+    def neck(self, neck: nn.Module):
+        ...
+
     @head.setter
-    def head(self, head: nn.Module): ...
+    def head(self, head: nn.Module):
+        ...
+
     @backbone.getter
-    def backbone(self) -> nn.Module: ...
+    def backbone(self) -> nn.Module:
+        ...
+
     @neck.getter
-    def neck(self) -> nn.Module: ...
+    def neck(self) -> nn.Module:
+        ...
+
     @head.getter
-    def head(self) -> nn.Module: ...
+    def head(self) -> nn.Module:
+        ...

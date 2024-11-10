@@ -11,6 +11,7 @@ from torch.optim.lr_scheduler import LRScheduler
 框架重写的父类(L.lightningmodule, nn.Module)方法，主要是前向传播、推理步骤和优化器配置等。
 """
 
+
 class FrameworkBaseOverride(L.LightningModule):
     @final
     def forward(self, x: Tensor) -> Tensor:
@@ -79,5 +80,3 @@ class FrameworkBaseOverride(L.LightningModule):
             Mapping[str, Tensor]: The mapping of output tensors.
         """
         return self.model_step(batch, self._framework_loss)
-
-    

@@ -1,10 +1,9 @@
 import torch
 from torch.utils.data import DataLoader
-
 from utils.Dataset import TimeSeriesDataset
 
 
-def get_datasets(input_len, output_len, division=[6,2,2]):
+def get_datasets(input_len, output_len, division=[6, 2, 2]):
     """
     获取数据集的函数。
 
@@ -19,20 +18,33 @@ def get_datasets(input_len, output_len, division=[6,2,2]):
     test_dataset：测试数据集。
     """
     training_dataset = TimeSeriesDataset(
-    data_path='data/BJinflow/in_10min_trans.csv', division=division,
-    input_len=input_len, output_len=output_len, flag='training')
+        data_path="data/BJinflow/in_10min_trans.csv",
+        division=division,
+        input_len=input_len,
+        output_len=output_len,
+        flag="training",
+    )
 
-    val_dataset=TimeSeriesDataset(
-    data_path='data/BJinflow/in_10min_trans.csv', division=division,
-    input_len=input_len, output_len=output_len, flag='validation')
+    val_dataset = TimeSeriesDataset(
+        data_path="data/BJinflow/in_10min_trans.csv",
+        division=division,
+        input_len=input_len,
+        output_len=output_len,
+        flag="validation",
+    )
 
     test_dataset = TimeSeriesDataset(
-    data_path='data/BJinflow/in_10min_trans.csv', division=division,
-    input_len=input_len, output_len=output_len, flag='test')
+        data_path="data/BJinflow/in_10min_trans.csv",
+        division=division,
+        input_len=input_len,
+        output_len=output_len,
+        flag="test",
+    )
 
-    return training_dataset,val_dataset,test_dataset
+    return training_dataset, val_dataset, test_dataset
 
-def get_dataloaders(input_len, output_len, batch_size=64, division=[6,2,2]):
+
+def get_dataloaders(input_len, output_len, batch_size=64, division=[6, 2, 2]):
     """
     获取训练、验证和测试数据加载器。
 
@@ -47,11 +59,20 @@ def get_dataloaders(input_len, output_len, batch_size=64, division=[6,2,2]):
     val_dataloader (DataLoader)：验证数据加载器。
     test_dataloader (DataLoader)：测试数据加载器。
     """
-    training_dataset,val_dataset,test_dataset=get_datasets(input_len, output_len, division)
-    training_dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-    return training_dataloader,val_dataloader,test_dataloader
+    training_dataset, val_dataset, test_dataset = get_datasets(
+        input_len, output_len, division
+    )
+    training_dataloader = DataLoader(
+        training_dataset, batch_size=batch_size, shuffle=True, num_workers=0
+    )
+    val_dataloader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=0
+    )
+    test_dataloader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=0
+    )
+    return training_dataloader, val_dataloader, test_dataloader
+
 
 def get_adj_matrix():
     """
@@ -62,10 +83,12 @@ def get_adj_matrix():
     """
     import numpy as np
     import pandas as pd
-    adj=pd.read_csv('data/BJinflow/adjacency_with_label.csv')
-    adj_matrix=torch.from_numpy(adj.values)
+
+    adj = pd.read_csv("data/BJinflow/adjacency_with_label.csv")
+    adj_matrix = torch.from_numpy(adj.values)
     return adj_matrix
 
-if __name__=='__main__':
-    adj=get_adj_matrix()
+
+if __name__ == "__main__":
+    adj = get_adj_matrix()
     print(adj.shape)

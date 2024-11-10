@@ -2,17 +2,14 @@ import sys
 
 sys.path.append(".")
 
-import time
-
 import tensorboard
 from lightning.pytorch import seed_everything
 
+seed_everything(42)
 from exp.exp_config import *
 from exp.prepare_data import datamodule
-from src.models.patchTransformer import PatchTransformer
-from src.trainers.forecasting_trainer import ForecastingTrainer
-
-seed_everything(42)
+from transformers_for_time_series.models.patchTransformer import PatchTransformer
+from transformers_for_time_series.trainers.forecasting_trainer import ForecastingTrainer
 
 model = PatchTransformer(
     in_features=DATA_FEATURES,
@@ -25,7 +22,6 @@ model = PatchTransformer(
     norm_first=True,
 )
 
-current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 trainer = ForecastingTrainer(
     max_epochs=TRAINER_MAX_EPOCHS,
     lr=TRAINER_LR,
@@ -33,7 +29,7 @@ trainer = ForecastingTrainer(
     early_stopping_patience=TRAINER_EARLY_STOPPING_PATIENCE,
     gradient_clip_algorithm=TRAINER_GRADIENT_CLIP_ALGORITHM,
     gradient_clip_val=TRAINER_GRADIENT_CLIP_VAL,
-    version=f"PatchTransformer-{DATA_INPUT_LENGTH}-{DATA_OUTPUT_LENGTH}-{current_time}",
+    log_save_name=f"PatchTransformer-{DATA_INPUT_LENGTH}-{DATA_OUTPUT_LENGTH}",
 )
 trainer.fit(model=model, datamodule=datamodule)
 trainer.test(model=model, datamodule=datamodule)

@@ -6,10 +6,10 @@ from t4ts.utils.visualization import SeriesPlotter
 
 
 def main():
-
     # Step 1. Choose a dataset
     from t4ts.utils.data import AutoEncodingDataModule
-    datamodule=AutoEncodingDataModule(
+
+    datamodule = AutoEncodingDataModule(
         data_path="data/bearing_fault_prediction/0",
         windows_size=128,
         stride=128,
@@ -35,7 +35,7 @@ def main():
 
     framework = AnomalyDetectionFramework(
         backbone=backbone,
-        backbone_out_seq_len=128//8,
+        backbone_out_seq_len=128 // 8,
         backbone_out_features=64,
         out_seq_len=128,
         out_features=1,
@@ -47,7 +47,6 @@ def main():
     # Step 4. fit and test
     framework.fit(datamodule, max_epochs=100)
     framework.test(datamodule)
-
 
 
 if __name__ == "__main__":

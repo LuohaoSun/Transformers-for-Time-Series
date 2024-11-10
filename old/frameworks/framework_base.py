@@ -23,15 +23,18 @@ class FrameworkBase(L.LightningModule, ABC):
 
     @property
     @abstractmethod
-    def backbone(self) -> nn.Module: ...
+    def backbone(self) -> nn.Module:
+        ...
 
     @property
     @abstractmethod
-    def neck(self) -> nn.Module: ...
+    def neck(self) -> nn.Module:
+        ...
 
     @property
     @abstractmethod
-    def head(self) -> nn.Module: ...
+    def head(self) -> nn.Module:
+        ...
 
     @abstractmethod
     def framework_forward(
@@ -246,29 +249,24 @@ class FrameworkBase(L.LightningModule, ABC):
     # 以下是重写的父类方法，相关注释参考父类。
     @final
     def forward(self, x: Tensor) -> Tensor:
-
         return self.framework_forward(x, self._framework_backbone, self.neck, self.head)
 
     def configure_optimizers(self) -> Dict[str, Union[Optimizer, LRScheduler]]:
-
         return {"optimizer": self._framework_optimizer}
 
     def training_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
-
         return self.model_step(batch, self._framework_loss)
 
     def validation_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
-
         return self.model_step(batch, self._framework_loss)
 
     def test_step(
         self, batch: Iterable[Tensor], batch_idx: int
     ) -> Mapping[str, Tensor]:
-
         return self.model_step(batch, self._framework_loss)
 
     # 运算符重载（用于支持abstractmethod与hparam更新）：
@@ -304,14 +302,25 @@ class FrameworkBase(L.LightningModule, ABC):
 
     # Don't work in runtime, only for type checking. Use __setattr__ and __getattribute__ instead.
     @backbone.setter
-    def backbone(self, backbone: nn.Module): ...
+    def backbone(self, backbone: nn.Module):
+        ...
+
     @neck.setter
-    def neck(self, neck: nn.Module): ...
+    def neck(self, neck: nn.Module):
+        ...
+
     @head.setter
-    def head(self, head: nn.Module): ...
+    def head(self, head: nn.Module):
+        ...
+
     @backbone.getter
-    def backbone(self) -> nn.Module: ...
+    def backbone(self) -> nn.Module:
+        ...
+
     @neck.getter
-    def neck(self) -> nn.Module: ...
+    def neck(self) -> nn.Module:
+        ...
+
     @head.getter
-    def head(self) -> nn.Module: ...
+    def head(self) -> nn.Module:
+        ...

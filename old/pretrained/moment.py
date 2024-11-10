@@ -8,8 +8,7 @@ pip install momentfm
 ```
 """
 
-from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
-                    Union)
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Union
 
 import lightning as L
 import torch

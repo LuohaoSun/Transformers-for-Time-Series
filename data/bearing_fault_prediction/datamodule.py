@@ -42,7 +42,6 @@ class FaultPredictionDataModule(LightningDataModule):
         return (self.batch_size, 4096, 1)
 
     def prepare_data(self) -> None:
-
         if not os.path.exists(self.train_data_dir):
             raise FileNotFoundError(
                 f"Training data directory { self.train_data_dir} does not exist."
@@ -69,7 +68,11 @@ class FaultPredictionDataModule(LightningDataModule):
             self.batch_size_per_device = self.batch_size
 
         if not hasattr(self, "train_dataset"):
-            self.train_dataset, self.val_dataset, self.test_dataset = self.prepare_datasets()
+            (
+                self.train_dataset,
+                self.val_dataset,
+                self.test_dataset,
+            ) = self.prepare_datasets()
 
     def prepare_datasets(self):
         print("Preparing datasets...")
@@ -139,7 +142,7 @@ class FaultPredictionDataModule(LightningDataModule):
 class List2Dataset(Dataset):
     def __init__(
         self,
-        sample_list: list[np.ndarray] | list[Tensor],   # type: ignore
+        sample_list: list[np.ndarray] | list[Tensor],  # type: ignore
         label: int | str | Tensor,
         transform: (
             Callable[[Tensor], Tensor] | Callable[[np.ndarray], np.ndarray] | None
@@ -155,7 +158,7 @@ class List2Dataset(Dataset):
                 torch.tensor(x, dtype=torch.float32) for x in sample_list
             ]
         if len(sample_list[0].shape) < 3:
-            sample_list = [x.unsqueeze(dim=-1) for x in sample_list]    # type: ignore
+            sample_list = [x.unsqueeze(dim=-1) for x in sample_list]  # type: ignore
         if transform:
             sample_list = [transform(x) for x in sample_list]  # type: ignore
         self.samples = [(x, label) for x in sample_list]
@@ -173,7 +176,6 @@ class sample_transform:
     ) -> None:
         print(f"{transform} sample transform initialized.")
         if isinstance(transform, str):
-
             if transform == "p2":
                 self.transform = self.p2
             elif transform == "z_score":

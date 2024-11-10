@@ -11,8 +11,7 @@ To use Chronos, you need to install the Chronos library:
 pip install git+https://github.com/amazon-science/chronos-forecasting.git
 """
 
-from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
-                    Union)
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Union
 
 import lightning as L
 import torch

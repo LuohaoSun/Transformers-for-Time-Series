@@ -58,5 +58,5 @@ def main():
         out_seq_len=24,
         out_features=276,
     )
-    
+
     # TODO: add training and testing code here

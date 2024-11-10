@@ -35,10 +35,10 @@ class TimeGPT(PretrainedBase):
 
         self.timegpt = NixtlaClient(api_key=api_key)
         self.output_len = output_len
-        
+
     def forward(self, x: Tensor) -> Tensor:
         return x
-        
+
     def _chronos_forecast_3d(self, x: Tensor) -> Tensor:
         x_df = self._tensor_to_df(x)
         y_df = self.timegpt.forecast(x_df, h=self.output_len)
@@ -50,7 +50,7 @@ class TimeGPT(PretrainedBase):
         y_df = self.timegpt.detect_anomalies(x_df)
         y = self._df_to_tensor(y_df)
         return y
-    
+
     def on_train_start(self) -> None:
         warnings.warn(
             "TimeGPT is a pre-trained model for time series and is not trainable. "

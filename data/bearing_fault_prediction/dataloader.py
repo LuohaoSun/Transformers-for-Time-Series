@@ -5,10 +5,14 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-
-from utils.data.data_augmentation import (MaskingDataset, MixupDataset,
-                                          NoisyDataset, ReversedDataset,
-                                          ShiftDataset, SmoothingDataset)
+from utils.data.data_augmentation import (
+    MaskingDataset,
+    MixupDataset,
+    NoisyDataset,
+    ReversedDataset,
+    ShiftDataset,
+    SmoothingDataset,
+)
 
 SAMPLE_PREDICT_DIR = "data/fault_predict/test2"
 

@@ -5,7 +5,6 @@ sys.path.append("..")
 
 
 def main():
-    
     # 在【快速上手】中，我们已经介绍了轴承数据集：
     from data.bearing_fault_prediction import FaultPredictionDataModule
 
@@ -46,5 +45,5 @@ def main():
     # dataloader1, dataloader2 = ...
     # framework.fit(train_dataloaders=dataloader1, val_dataloaders=dataloader2)
     # framework.test(dataloader=dataloader)
-    
+
     # TODO: add training and testing code here

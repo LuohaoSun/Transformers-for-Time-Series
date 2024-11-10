@@ -46,7 +46,6 @@ class ForecastingFramework(FrameworkBase):
         self.neck = custom_neck or nn.Identity()
         self.head = custom_head or nn.Linear(backbone_out_features, out_features)
 
-
     def get_task_callbacks(self) -> list[L.Callback]:
         return [
             ComputeMetricsAndLog(),

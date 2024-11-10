@@ -2,17 +2,14 @@ import sys
 
 sys.path.append(".")
 
-import time
-
 import tensorboard
 from lightning.pytorch import seed_everything
 
+seed_everything(42)
 from exp.exp_config import *
 from exp.prepare_data import datamodule
-from src.models.GCNpatchTransformer import GCNPatchTransformer
-from src.trainers.forecasting_trainer import ForecastingTrainer
-
-seed_everything(42)
+from transformers_for_time_series.models.GCNpatchTransformer import GCNPatchTransformer
+from transformers_for_time_series.trainers.forecasting_trainer import ForecastingTrainer
 
 model = GCNPatchTransformer(
     adj=DATA_ADJ_PATH,
@@ -25,8 +22,6 @@ model = GCNPatchTransformer(
     dropout=MODEL_DROPOUT,
     norm_first=True,
 )
-
-current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 trainer = ForecastingTrainer(
     max_epochs=TRAINER_MAX_EPOCHS,
     lr=TRAINER_LR,
@@ -34,7 +29,7 @@ trainer = ForecastingTrainer(
     weight_decay=TRAINER_WEIGHT_DECAY,
     gradient_clip_algorithm=TRAINER_GRADIENT_CLIP_ALGORITHM,
     gradient_clip_val=TRAINER_GRADIENT_CLIP_VAL,
-    version=f"GCNPatchTransformer-{DATA_INPUT_LENGTH}-{DATA_OUTPUT_LENGTH}-{current_time}",
+    log_save_name=f"GCNPatchTransformer-{DATA_INPUT_LENGTH}-{DATA_OUTPUT_LENGTH}",
 )
 trainer.fit(model=model, datamodule=datamodule)
 trainer.test(model=model, datamodule=datamodule)

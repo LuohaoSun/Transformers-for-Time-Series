@@ -13,7 +13,6 @@ class BJInflowDataModule(ForecastingDataModule):
         num_workers=4,
         normalization="01",
     ):
-
         super().__init__(
             csv_file_path="data/BJinflow/in_10min_trans.csv",
             stride=stride,
@@ -25,6 +24,7 @@ class BJInflowDataModule(ForecastingDataModule):
             normalization=normalization,
         )
 
+
 def get_adj_matrix():
     """
     获取邻接矩阵。
@@ -34,6 +34,7 @@ def get_adj_matrix():
     """
     import numpy as np
     import pandas as pd
-    adj=pd.read_csv('data/BJinflow/adjacency_with_label.csv')
-    adj_matrix=torch.from_numpy(adj.values)
+
+    adj = pd.read_csv("data/BJinflow/adjacency_with_label.csv")
+    adj_matrix = torch.from_numpy(adj.values)
     return adj_matrix

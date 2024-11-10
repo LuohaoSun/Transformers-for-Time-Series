@@ -1,9 +1,8 @@
-from lightning.pytorch import seed_everything
-
 from exp.exp_config import *
-from src.data.PeMS_Bay import get_forecasting_datamodule, get_adj_matrix
-
-seed_everything(42)
+from transformers_for_time_series.data.PeMS_Bay import (
+    get_adj_matrix,
+    get_forecasting_datamodule,
+)
 
 datamodule = get_forecasting_datamodule(
     csv_file_path=DATA_PATH,
