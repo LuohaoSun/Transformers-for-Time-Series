@@ -1,11 +1,11 @@
 from lightning.pytorch import seed_everything
 
 from exp.exp_config import *
-from src.utils.data import ForecastingDataModule
+from src.data.PeMS_Bay import get_forecasting_datamodule, get_adj_matrix
 
 seed_everything(42)
 
-datamodule = ForecastingDataModule(
+datamodule = get_forecasting_datamodule(
     csv_file_path=DATA_PATH,
     stride=DATA_STRIDE,
     input_length=DATA_INPUT_LENGTH,
@@ -15,3 +15,5 @@ datamodule = ForecastingDataModule(
     train_val_test_split=DATA_TRAIN_VAL_TEST_SPLIT,
     normalization=DATA_NORMALIZATION,
 )
+
+adj = get_adj_matrix()
