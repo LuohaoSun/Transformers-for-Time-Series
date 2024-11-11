@@ -3,6 +3,7 @@ import sys
 sys.path.append(".")
 
 import tensorboard
+import torch.nn.functional as F
 from lightning.pytorch import seed_everything
 
 seed_everything(42)
@@ -17,7 +18,9 @@ model = LSTMModel(
     out_features=DATA_FEATURES,
     num_layers=MODEL_NUM_LAYERS,
     bidirectional=True,
+    dropout=MODEL_DROPOUT,
 )
+
 
 trainer = ForecastingTrainer(
     max_epochs=TRAINER_MAX_EPOCHS,

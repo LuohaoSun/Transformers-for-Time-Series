@@ -68,6 +68,7 @@ class LSTMModel(nn.Module):
         bidirectional: bool = False,
     ) -> None:
         super().__init__()
+        self.in_features = in_features
         self.backbone = LSTMBackbone(
             in_features=in_features,
             hidden_features=hidden_features,
@@ -78,4 +79,5 @@ class LSTMModel(nn.Module):
         self.output_layer = nn.Linear(hidden_features, out_features)
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.output_layer(self.backbone(x))
+        x = self.output_layer(self.backbone(x))
+        return x

@@ -1,4 +1,5 @@
 import sys
+import torch.nn.functional as F
 
 sys.path.append(".")
 
@@ -22,8 +23,10 @@ model = PatchTransformer(
     norm_first=True,
 )
 
+
 trainer = ForecastingTrainer(
     max_epochs=TRAINER_MAX_EPOCHS,
+    precision=TRAINER_PRECISION,
     lr=TRAINER_LR,
     weight_decay=TRAINER_WEIGHT_DECAY,
     early_stopping_patience=TRAINER_EARLY_STOPPING_PATIENCE,

@@ -19,7 +19,7 @@ class ForecastingDataModule(L.LightningDataModule):
 
     def __init__(
         self,
-        csv_file_path: str,
+        file_path: str,
         stride: int,
         input_length: int,
         output_length: int,
@@ -27,10 +27,12 @@ class ForecastingDataModule(L.LightningDataModule):
         train_val_test_split: Tuple[float, float, float] = (0.6, 0.2, 0.2),
         num_workers: int = 0,
         normalization: str = "01",  # 01, zscore, minmax, none
+        fillna: bool = True,
+        dtype: type = np.float32,
     ) -> None:
         """
         Args:
-            csv_file_path: str, the path of the .csv file. Each row is a time step, and each column is a feature.
+            file_path: str, the path of the .csv or .h5 file. Each row is a time step, and each column is a feature.
             stride: int, the stride of the sliding window.
             input_length: int, the length of the input sequence.
             output_length: int, the length of the output sequence.
@@ -40,7 +42,7 @@ class ForecastingDataModule(L.LightningDataModule):
             normalization: str, the normalization method. 01, zscore, minmax, none.
         """
         super().__init__()
-        self.file_path = csv_file_path
+        self.file_path = file_path
         self.stride = stride
         self.input_length = input_length
         self.output_length = output_length
@@ -48,32 +50,31 @@ class ForecastingDataModule(L.LightningDataModule):
         self.train_val_test_split = train_val_test_split
         self.num_workers = num_workers
         self.normalization = normalization
-
-    @property
-    def num_features(self):
-        if hasattr(self, "csv_data"):
-            return self.csv_data.shape[1]
-        else:
-            raise ValueError("csv_data is not loaded yet")
+        self.fillna = fillna
+        self.dtype = dtype
 
     def prepare_data(self) -> None:
         # download, IO, etc. Useful with shared filesystems
         # only called on 1 GPU/TPU in distributed
-        self.csv_data = pd.read_csv(self.file_path)
-        if self.normalization == "01":
-            self.csv_data = (self.csv_data - self.csv_data.min()) / (
-                self.csv_data.max() - self.csv_data.min()
-            )
-        elif self.normalization == "zscore":
-            self.csv_data = (self.csv_data - self.csv_data.mean()) / self.csv_data.std()
-        elif self.normalization == "minmax":
-            self.csv_data = (self.csv_data - self.csv_data.min()) / (
-                self.csv_data.max() - self.csv_data.min()
-            )
+        if self.file_path.endswith(".csv"):
+            csv_data = pd.read_csv(self.file_path)
+        elif self.file_path.endswith(".h5"):
+            csv_data = pd.read_hdf(self.file_path)
         else:
-            pass
+            raise ValueError("Invalid file extension")
+        if self.fillna:
+            csv_data = csv_data.ffill()
+
+        np_data = csv_data.to_numpy(dtype=self.dtype)
+        if self.normalization == "01":
+            np_data = (np_data - np_data.min()) / (np_data.max() - np_data.min())
+        elif self.normalization == "zscore":
+            np_data = (np_data - np_data.mean()) / np_data.std()
+        elif self.normalization == "minmax":
+            np_data = (np_data - np_data.min()) / (np_data.max() - np_data.min())
+        assert np.isnan(np_data).sum() == 0
         self.dataset = ForecastingDataset(
-            self.csv_data.to_numpy(),
+            np_data,
             self.stride,
             self.input_length,
             self.output_length,
