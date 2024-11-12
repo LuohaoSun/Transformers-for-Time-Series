@@ -98,6 +98,7 @@ class ForecastingTrainer(TrainerBase):
             gradient_clip_algorithm=self.gradient_clip_algorithm,
             gradient_clip_val=self.gradient_clip_val,
         )
+
         return trainer
 
     def configure_loss_fn(self) -> Callable[[Tensor, Tensor], Tensor]:
